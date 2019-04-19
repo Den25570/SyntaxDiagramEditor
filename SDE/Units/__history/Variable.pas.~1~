@@ -1,0 +1,34 @@
+unit Variable;
+
+interface
+
+uses
+  SysUtils, Classes, QControls, QStdCtrls, StdCtrls, QSyntSymbol;
+
+type
+  TVariable = class(TSyntSymbol)
+  public
+    sqrBra: array[1..2] of TStaticText;
+    procedure ALign;
+  end;
+
+procedure Register;
+
+implementation
+
+procedure Register;
+begin
+  RegisterComponents('Samples', [TVariable]);
+end;
+
+procedure TVariable.ALign;
+begin
+  sqrBra[1].Left := left - 5 - sqrBra[1].Width;
+  sqrBra[1].Top := Top - 4;
+  sqrBra[2].Left := left + Width + 5;
+  sqrBra[2].Top := Top - 4;
+end;
+
+
+end.
+

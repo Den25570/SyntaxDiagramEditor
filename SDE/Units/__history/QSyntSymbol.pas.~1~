@@ -1,0 +1,23 @@
+unit QSyntSymbol;
+
+interface
+
+uses
+  SysUtils, Classes, QControls, StdCtrls, SyntUnit;
+
+type
+  TSyntSymbol = class(TEdit)
+  public
+    //List connections
+    Prev : TSyntUnit;
+    Next : TSyntUnit;
+
+    Depth: Integer;
+    subDepth : Integer;
+    isAlter : boolean;
+    AltIndex : Integer;
+  end;
+
+implementation
+
+end.
