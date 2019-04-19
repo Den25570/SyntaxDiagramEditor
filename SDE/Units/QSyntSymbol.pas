@@ -12,7 +12,6 @@ type
     Prev : TSyntUnit;
     Next : TSyntUnit;
 
-  //  subDepth : Integer;
     isAlter : boolean;
     AltIndex : Integer;
   end;

@@ -378,7 +378,6 @@ begin
       else if obj is TSyntSymbol then
       begin
         Symbol := (obj as TSyntSymbol);
-  //      inc(Symbol.subDepth);
         Symbol.Top := Symbol.Top + ShiftHeight;
         if Symbol is TVariable then
           (Symbol as TVariable).ALign;
@@ -397,7 +396,6 @@ begin
   Alter[ind, i].LineSettings(Alter[ind, 1]);
   Alter[ind, i].subDepth := Sender.SubDepth;
   Alter[ind, i].PointCreate(Form1.MainPoint, Form1);
-  //Alter[ind, i].OnClick := StartLineClick;
   Alter[ind, i].Points[0].isAlter := True;
 
   // Настройка списка
@@ -419,8 +417,7 @@ begin
   Inc(Alter[ind, 1].subDepth);
   Alter[ind, 3].Points[Length(Alter[ind, 3].Points) - 1].subDepth := Alter[ind, 1].subDepth + 1;
 
-  AlterVerticalAlign(ind);
-  AlignAllAlternatives();
+  Form1.ObjectsAlign(true);
 end;
 
 function FindNextAlternative(ind: integer): integer;

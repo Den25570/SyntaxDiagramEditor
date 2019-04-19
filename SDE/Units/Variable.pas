@@ -27,7 +27,10 @@ end;
 
 destructor TVariable.Destroy();
 begin
+  sqrBra[1].Destroy();
+  sqrBra[2].Destroy();
   inherited;
+  //wtf
 end;
 
 procedure TVariable.StartSettings();

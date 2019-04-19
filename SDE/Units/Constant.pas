@@ -23,7 +23,6 @@ begin
   Form1.Constant.BorderStyle := bsNone;
   Form1.Constant.Text := 'константа';
   Form1.Constant.Width := Form1.Canvas.TextWidth(Form1.Constant.Text);
-//  Form1.Constant.Height := Form1.Canvas.TextHeight(Form1.Constant.Text);
   Form1.Constant.OnChange := Form1.OnTextChange;
 end;
 
