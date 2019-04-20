@@ -9,7 +9,7 @@ type
   TLine = class(TSyntUnit)
   public
     hasArrow: boolean;
-    constructor Create(Aowner : TComponent);
+    constructor Create(Aowner : TComponent); 
     destructor Destroy();
     procedure LineDraw;
     procedure PointCreate(MPoint: TShape; Form: TForm);
@@ -20,7 +20,7 @@ type
 implementation
 
 uses
-  TransferLine, Main;
+  TransferLine, Main, Alternative;
 
 constructor TLine.Create(AOwner : TComponent);
 begin
@@ -29,8 +29,8 @@ begin
   Height := LnH;
   Width := LnW;
   hasArrow := True;
-  PointCreate(Form1.MainPoint, Form1);
   OnClick := Form1.StartLineClick;
+  PointCreate(Form1.MainPoint, Form1);
 end;
 
 destructor  TLine.Destroy();
@@ -55,6 +55,7 @@ begin
   Points[ind].Shape := stRoundSquare;
   Points[ind].Brush := MPoint.Brush;
   Points[ind].Pen := MPoint.Pen;
+  Points[ind].SubDepth := SubDepth;
   Points[ind].visible := False;
   Points[ind].Owner := Self;
   Points[ind].OnMouseDown := MPoint.OnMouseDown;
@@ -110,13 +111,12 @@ begin
   if hasArrow and not(Next is TLine) then
   begin
     Wdth := Width;
-    if Next is TTransferLine then
+    if (Next is TTransferLine) or (Next is TAlternative) then
       Wdth := Wdth div 2;
     Canvas.MoveTo(Wdth, Height div 2);
     Canvas.LineTo(Wdth - Height div 4 - 8, Height div 4);
     Canvas.MoveTo(Wdth, Height div 2);
     Canvas.LineTo(Wdth - Height div 4 - 8, Height - Height div 4);
-
   end;
 end;
 

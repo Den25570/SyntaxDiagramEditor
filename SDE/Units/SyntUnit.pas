@@ -14,6 +14,7 @@ type
     alternative :array of TComponent;
 
     Points: array of TPoint;
+    SubDepth: integer;
     AltIndex : Integer;
     CurrentWidth : Integer;
 

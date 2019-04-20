@@ -74,6 +74,7 @@ type
     procedure ShowPointsOnLines();
     procedure ShowMainPoint();
     procedure HidePoints();
+    procedure LineCreate(Sender: TPoint);
     procedure DrawRightBorder();
     procedure ReConnection(Sender: TPoint);
     procedure ShowLowerPoints(Sender: TPoint);
@@ -84,8 +85,8 @@ type
     procedure AlterCreate2(Sender: TPoint);
     procedure TransferLineCreate(Sender: TPoint);
     procedure AlterEmptyCreate(Sender: TPoint);
-    procedure ConstantAlternativeCreate(Sender: TObject);
-    procedure ConstantCreate(Sender: TObject);
+    procedure ConstantAlternativeCreate(Sender: TPoint);
+    procedure ConstantCreate(Sender: TPoint);
   public
     //Statement variables
     currentObject: integer;
@@ -323,7 +324,7 @@ begin
   ObjectsAlign(false);
 end;
 
-procedure TForm1.ConstantCreate(Sender: TObject);
+procedure TForm1.ConstantCreate(Sender: TPoint);
 var
   flag: Boolean;
   ln: TLine;
@@ -333,36 +334,23 @@ begin
   Line := TLine.Create(Form1);
 
   //Редактирование списка
-  flag := False;
-  if Sender is TPoint then
-    if (Sender as TPoint).Owner as TLine = Component_List_tail then
-      flag := true;
-  if ((Sender as TShape).Name = 'MainPoint') or flag then
-  begin
-    (Component_List_tail as TSyntUnit).Next := Constant;
-    Constant.Prev := Component_List_tail;
+  ln := Sender.Owner as TLine;
+  buf_Component := ln.Next;
+  ln.Next := Constant;
+  Constant.Prev := ln;
+  Constant.Next := Line;
+  Line.Next := buf_Component;
+  Line.Prev := Constant;
+  if (buf_Component is TSyntSymbol) then
+    (buf_Component as TSyntSymbol).Prev := Line
+  else if (buf_Component is TTransferLine) then
+    (buf_Component as TTransferLine).Prev := Line
+  else if buf_Component = nil then
     Component_List_tail := Line;
-    Constant.Next := Component_List_tail;
-    Line.Prev := Constant;
-  end
-  else if (Sender is TPoint) then
-  begin
-    ln := (Sender as TPoint).Owner as TLine;
-    buf_Component := ln.Next;
-    ln.Next := Constant;
-    Constant.Prev := ln;
-    Constant.Next := Line;
-    Line.Next := buf_Component;
-    Line.Prev := Constant;
-    if (buf_Component is TSyntSymbol) then
-      (buf_Component as TSyntSymbol).Prev := Line
-    else if (buf_Component is TTransferLine) then
-      (buf_Component as TTransferLine).Prev := Line
-  end;
   ObjectsAlign(true);
 end;
 
-procedure TForm1.ConstantAlternativeCreate(Sender: TObject);
+procedure TForm1.ConstantAlternativeCreate(Sender: TPoint);
 var
   i: Integer;
   Alt: TAlternative;
@@ -370,33 +358,31 @@ var
 begin
   //Создание переменной
   Constant.StartSettings();
-  Alt := (Sender as TPoint).Owner as TAlternative;
- // Constant.subDepth := Alt.SubDepth;
+  Alt := Sender.Owner as TAlternative;
   Constant.isAlter := True;
   Constant.Altindex := Alt.Altindex;
-  Alt.isConnected := false;
 
   //Создание линии
-  AlterLineCreate(Alt);
-  i := Length(Alter[Alt.Altindex]) - 1;
+  Line := TLine.Create(Form1);
 
   //Редактирование списка
   PBuf := Alt.Next;
   Alt.Next := Constant;
   Constant.Prev := Alt;
-  Constant.Next := Alter[Alt.Altindex, i];
-  Alter[Alt.Altindex, i].Prev := Constant;
-  Alter[Alt.Altindex, i].Next := PBuf;
+  Constant.Next := Line;
+  Line.Prev := Constant;
+  Line.Next := PBuf;
   if PBuf is TSyntSymbol then
-    (PBuf as TSyntSymbol).Prev := Alter[Alt.Altindex, i]
+    (PBuf as TSyntSymbol).Prev := Line
   else if PBuf is TSyntUnit then
   begin
-    if not (PBuf as TAlternative).pylon then
-      (PBuf as TAlternative).Prev := Alter[Alt.Altindex, i]
+    if PBuf is TLine then
+      (PBuf as TLine).Prev := Line
     else
-      (PBuf as TAlternative).PPrevS[Alt.SubDepth - 1] := Alter[Alt.Altindex, i]
+      (PBuf as TAlternative).PPrevS[Alt.SubDepth - 1] := Line;
   end;
-  AlterAlign(Alt.Altindex, false, true);
+
+  ObjectsAlign(true);
 
 end;
 
@@ -466,10 +452,11 @@ begin
   end
   else
   begin
-    Line := TLine.Create(Form1);
+    LineCreate(Sender);
     Line.Prev := Variable;
+
        //Перепривзяка при сдвиге
-    ReConnection(Sender as TPoint);
+    ReConnection(Sender);
 
     ln := Sender.Owner as TLine;
        //Редактирование списка
@@ -481,10 +468,16 @@ begin
     Line.Prev := Variable;
     if (buf_Component is TSyntSymbol) then
       (buf_Component as TSyntSymbol).Prev := Line
+    else if (buf_Component is TSyntUnit) then
+    begin
+      (buf_Component as TSyntUnit).Prev := Line;
+      if (buf_Component is TSyntUnit) then
+        (buf_Component as TAlternative).PPrevS[ln.subdepth - 1] := Line
+    end
     else if (buf_Component is TTransferLine) then
       (buf_Component as TTransferLine).Prev := Line
     else if (buf_Component = nil) then
-       Component_List_Tail := Line;
+      Component_List_Tail := Line;
   end;
   ObjectsAlign(true);
 end;
@@ -492,48 +485,40 @@ end;
 procedure TForm1.VariableAlternativeCreate(Sender: TObject);
 var
   i: Integer;
-  obj: TAlternative;
+  ln: TLine;
   PBuf: TComponent;
 begin
   //Создание переменной
   Variable := TVariable.Create(Form1);
   Variable.StartSettings();
   Variable.BorderStyle := bsNone;
-  obj := (Sender as TPoint).Owner as TAlternative;
+
+  ln := (Sender as TPoint).Owner as TLine;
   Variable.ALign;
   Variable.isAlter := True;
-  Variable.Altindex := obj.Altindex;
-  obj.isConnected := false;
+  Variable.Altindex := ln.Altindex;
 
   //Создание линии
-  AlterLineCreate(obj);
-  i := Length(Alter[obj.Altindex]) - 1;
+  Line := TLine.Create(Form1);
 
   //Редактирование списка
-  PBuf := obj.Next;
-  obj.Next := Variable;
-  Variable.Prev := obj;
-  Variable.Next := Alter[obj.Altindex, i];
-  Alter[obj.Altindex, i].Prev := Variable;
-  Alter[obj.Altindex, i].Next := PBuf;
+  PBuf := ln.Next;
+  ln.Next := Variable;
+  Variable.Prev := ln;
+  Variable.Next := Line;
+  Line.Prev := Variable;
+  Line.Next := PBuf;
   if PBuf is TSyntSymbol then
-    (PBuf as TSyntSymbol).Prev := Alter[obj.Altindex, i]
+    (PBuf as TSyntSymbol).Prev := Line
   else if PBuf is TSyntUnit then
   begin
-    if not (PBuf as TAlternative).pylon then
-      (PBuf as TAlternative).Prev := Alter[obj.Altindex, i]
+    if PBuf is TLine then
+      (PBuf as TLine).Prev := Line
     else
-      (PBuf as TAlternative).PPrevS[obj.SubDepth - 1] := Alter[obj.Altindex, i]
+      (PBuf as TAlternative).PPrevS[ln.SubDepth - 1] := Line
   end;
-  AlterAlign(obj.Altindex, false, true);
+  AlterAlign(ln.Altindex, false, true);
 end;
-
-
-{**************************************************************}
-{                                                              }
-{                   Вызов конструктора компонента              }
-{                                                              }
-{**************************************************************}
 
 procedure TForm1.MainPointMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
@@ -548,7 +533,7 @@ begin
       1:
         VariableCreate(Point);
       2:
-        ConstantCreate(Sender);
+        ConstantCreate(Point);
     end;
   end
   else if not (Sender as TPoint).isAlter then
@@ -584,6 +569,13 @@ begin
   end;
   if hideP then
     ResetStatement();
+end;
+
+procedure TForm1.LineCreate(Sender: TPoint);
+begin
+  Line := TLine.Create(Form1);
+  Line.SubDepth := Sender.SubDepth;
+  Line.Points[0].SubDepth := Sender.SubDepth;
 end;
 
 //Скрытие точек
@@ -637,10 +629,7 @@ begin
     else if (Form1.Components[i] is TAlternative) then
     begin
       Alternative := (Form1.Components[i] as TAlternative);
-      if ((Form1.Components[i] as TAlternative).pylon) and (currentObject = 5) then
-        AlterFunctions.ShowPoints(Alternative)
-      else if not ((Form1.Components[i] as TAlternative).pylon) then
-        Alternative.ShowPoints();
+      Alternative.ShowPoints();
     end
   end;
 end;
@@ -690,10 +679,7 @@ begin
   while obj <> nil do
   begin
     if obj is TLine then
-      (obj as TLine).ShowPoints
-    else if obj is TAlternative then
-      if not (obj as TAlternative).pylon then
-        (obj as TAlternative).ShowPoints;
+      (obj as TLine).ShowPoints;
 
     if obj is TSyntUnit then
       obj := (obj as TSyntUnit).Prev
@@ -719,17 +705,16 @@ var
 begin
   //Первоначальное создание и настройка
   AlterStartSettings(ind);
-  Alter[ind, 3].isUpper := isUpperChoice;
   Alter[ind, 2].isUpper := isUpperChoice;
   Alter[ind, 1].isUpper := isUpperChoice;
 
   //Привязка левого пилона и носителя
   obj := (Sender.Owner as TSyntUnit);
   obj.Altindex := ind;
-  Alter[ind, 3].AltLineIndex := Sender.altLineIndex;
-  Alter[ind, 3].carringObject := obj;
+  Alter[ind, 2].AltLineIndex := Sender.altLineIndex;
+  Alter[ind, 2].carringObject := obj;
   AltIndexesShift(obj, Sender.altLineIndex);
-  obj.alternative[Sender.altLineindex] := Alter[ind, 3];
+  obj.alternative[Sender.altLineindex] := Alter[ind, 2];
 
   if Sender = alt_Owner then
     AlterEmptyCreate(Sender);
@@ -744,8 +729,7 @@ begin
 
   // Создание, прорисовка и настройка альтернатив
   (Alter[ind, 1].carringObject as TLine).PointCreate(MainPoint, Form1);
-  (Alter[ind, 3].carringObject as TLine).PointCreate(MainPoint, Form1);
-  Alter[ind, 3].OnClick := StartLineClick;
+  (Alter[ind, 2].carringObject as TLine).PointCreate(MainPoint, Form1);
   Alter[ind, 2].OnClick := StartLineClick;
   Alter[ind, 1].OnClick := StartLineClick;
 
@@ -754,21 +738,28 @@ end;
 
 procedure TForm1.AlterEmptyCreate(Sender: TPoint);
 var
-  buf_comp: TSyntSymbol;
+  buf_comp: TComponent;
 begin
-  Line := TLine.Create(Form1);
-  buf_comp := (Sender.Owner as TLine).Next as TSyntSymbol;
+  LineCreate(Sender);
+  buf_comp := (Sender.Owner as TLine).Next;
   (Sender.Owner as TLine).Next := Line;
   Line.Prev := (Sender.Owner as TLine);
 
-  Line := TLine.Create(Form1);
+  LineCreate(Sender);
 
   ((Sender.Owner as TLine).Next as TLine).Next := Line;
   Line.Prev := ((Sender.Owner as TLine).Next as TLine);
   Line.Next := buf_comp;
 
   if buf_comp <> nil then
-    buf_comp.prev := Line
+  begin
+    if buf_comp is TSyntSymbol then
+      (buf_comp as TSyntSymbol).prev := Line
+    else if buf_comp is TLine then
+      (buf_comp as TLine).prev := Line
+    else if buf_comp is TAlternative then
+      (buf_comp as TAlternative).PprevS[Sender.Subdepth - 1] := Line;
+  end
   else
     Component_List_tail := Line;
 
@@ -798,8 +789,7 @@ begin
     for i := 0 to ComponentCount - 1 do
     begin
       if Form1.Components[i] is TAlternative then
-        if (Form1.Components[i] as TAlternative).pylon then
-          AlterFunctions.ShowPoints(Form1.Components[i] as TAlternative);
+        (Form1.Components[i] as TAlternative).ShowPoints();
     end;
     currentObject := 5;
   end
