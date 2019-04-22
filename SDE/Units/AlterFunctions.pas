@@ -145,18 +145,18 @@ begin
   Alter[ind, 2].Height := ShiftHeight + ShiftHeight div 2 - 5 + (ShiftHeight * (Alter[ind, 2].subdepth - 1)) + Alter[ind, 2].addHeight;
   Alter[ind, 1].Height := Alter[ind, 2].Height;
 
-  Alter[ind, 1].Left := obj.Left + obj.Width - Alter[ind, 2].Width*2 - Alter[ind, 2].Width*2  * (length((Alter[ind, 1].carringObject as TLine).Alternative) - Alter[ind, 1].AltLineIndex);
-  Alter[ind, 1].Top := obj.Top + (obj.Height div 2) + 1;
+  Alter[ind, 1].Left := obj.Left + obj.Width - Alter[ind, 2].Width - Alter[ind, 2].Width*2  * (length((Alter[ind, 1].carringObject as TLine).Alternative) - Alter[ind, 1].AltLineIndex);
+  Alter[ind, 1].Top := obj.Top + (obj.Height div 2)+1;
   if Alter[ind, 1].isUpper then
     Alter[ind, 1].Top := Alter[ind, 1].Top - Alter[ind, 1].Height - ALTER[ind, 1].Canvas.pen.width * 1;
 
   obj := Alter[ind, 2].carringObject;
-  Alter[ind, 2].Left := obj.Left + Alter[ind, 2].Width*2 * (Alter[ind, 2].AltLineIndex + 1);
+  Alter[ind, 2].Left := obj.Left +   Alter[ind, 2].Width*2 * (Alter[ind, 2].AltLineIndex + 1);
   Alter[ind, 2].Top := Alter[ind, 1].Top;
 
   AlterVerticalAlign(ind);
-  if CheckIntersection(ind) then
-    i := 0;
+ // if CheckIntersection(ind) then
+ //   i := 0;
      { TODO : Предупреждать о пересечении }
 
   //Выравнивание нижней части

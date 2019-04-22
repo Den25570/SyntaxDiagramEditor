@@ -30,16 +30,8 @@ begin
   ind := Length(Points);
   SetLength(Points, ind + 1);
   Points[ind] := TPoint.Create(Form);
-  Points[ind].Parent := Form;
-  Points[ind].Height := 9;
-  Points[ind].Width := 9;
-  Points[ind].Shape := stRoundSquare;
-  Points[ind].Brush := MPoint.Brush;
-  Points[ind].Pen := MPoint.Pen;
-  Points[ind].visible := False;
   Points[ind].Owner := Self;
-  Points[ind].OnMouseDown := MPoint.OnMouseDown;
-  Points[ind].isAlter := True;
+  Points[ind].isALter := true;
   Points[ind].AltLineIndex := ind;
 end;
 
@@ -72,9 +64,10 @@ begin
 
   if not isUpper then
   begin
-    Canvas.MoveTo(0, 0);
-    Canvas.LineTo(Width,Width);
-    Canvas.Rectangle(Width-(Canvas.Pen.Width-1),Width,Width,height-Width+Canvas.Pen.Width);
+    Canvas.Rectangle(Canvas.Pen.Width-1 ,0,Canvas.Pen.Width+1,Canvas.Pen.Width-1);
+    Canvas.MoveTo(Canvas.Pen.Width, 0);
+    Canvas.LineTo(Width,Width-Canvas.Pen.Width);
+    Canvas.Rectangle(Width-(Canvas.Pen.Width-1),Width - Canvas.Pen.Width,Width,height-Width+Canvas.Pen.Width);
     for i := 1 to subDepth - 1 do
     begin
       T := ((PNextS[i - 1] as TLine).Top + (PNextS[i - 1] as TLine).Height div 2) - Top;
@@ -104,9 +97,10 @@ begin
 
   if not isUpper then
   begin
-    Canvas.MoveTo(Width, 0);
-    Canvas.LineTo(0,Width);
-    Canvas.Rectangle(0,Width,Canvas.Pen.Width,height-Width+Canvas.Pen.Width-1);
+    Canvas.Rectangle(Width - (Canvas.Pen.Width-1) ,0, Width,Canvas.Pen.Width-1);
+    Canvas.MoveTo(Width - Canvas.Pen.Width, 0);
+    Canvas.LineTo(0,Width - Canvas.Pen.Width);
+    Canvas.Rectangle(0,Width- Canvas.Pen.Width,Canvas.Pen.Width,height-Width+Canvas.Pen.Width-1);
     for i := 1 to subDepth - 1 do
     begin
       T := ((PPrevS[i - 1] as TLine).Top + (PPrevS[i - 1] as TLine).Height div 2) - Top;

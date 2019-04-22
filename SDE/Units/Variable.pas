@@ -3,16 +3,14 @@ unit Variable;
 interface
 
 uses
-  SysUtils, Classes, StdCtrls, QSyntSymbol;
+  SysUtils, Classes, StdCtrls, QSyntSymbol , Graphics, Forms ;
 
 type
   TVariable = class(TSyntSymbol)
-  private
-    constructor Create(AOwner : TComponent);
-    destructor Destroy();
   public
     sqrBra: array[1..2] of TStaticText;
-    procedure StartSettings();
+    constructor Create(AOwner : TComponent);
+    destructor Destroy();
     procedure Align();
   end;
 
@@ -23,24 +21,13 @@ uses main;
 constructor TVariable.Create(AOwner : TComponent);
 begin
   inherited;
-end;
-
-destructor TVariable.Destroy();
-begin
-  sqrBra[1].Destroy();
-  sqrBra[2].Destroy();
-  inherited;
-  //wtf
-end;
-
-procedure TVariable.StartSettings();
-begin
   Parent := Form1;
   font := Form1.edtVarDef.Font;
   Text := 'переменная';
   Width := Form1.Canvas.TextWidth('переменная');
   OnChange := Form1.OnTextChange;
   OnClick := Form1.StartLineClick;
+  BorderStyle := bsNone;
   PopupMenu := Form1.pm1;
   Altindex := -1;
   isAlter := false;
@@ -52,6 +39,13 @@ begin
   sqrBra[1].Caption := '<';
   sqrBra[2].font := Form1.sb1VarDef.Font;
   sqrBra[2].Caption := '>';
+end;
+
+destructor TVariable.Destroy();
+begin
+  sqrBra[1].Destroy();
+  sqrBra[2].Destroy();
+  inherited;
 end;
 
 procedure TVariable.ALign;

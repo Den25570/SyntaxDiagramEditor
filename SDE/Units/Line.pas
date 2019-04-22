@@ -49,16 +49,8 @@ begin
   ind := Length(Points);
   SetLength(Points, ind + 1);
   Points[ind] := TPoint.Create(Form);
-  Points[ind].Parent := Form;
-  Points[ind].Height := 9;
-  Points[ind].Width := 9;
-  Points[ind].Shape := stRoundSquare;
-  Points[ind].Brush := MPoint.Brush;
-  Points[ind].Pen := MPoint.Pen;
   Points[ind].SubDepth := SubDepth;
-  Points[ind].visible := False;
   Points[ind].Owner := Self;
-  Points[ind].OnMouseDown := MPoint.OnMouseDown;
   Points[ind].AltLineIndex := ind;
 end;
 

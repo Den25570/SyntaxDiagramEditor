@@ -148,6 +148,7 @@ begin
   MainPoint.Pen.Color := clGreen;
   MainPoint.Visible := False;
   MainPoint.Shape := stRoundSquare;
+  MainPoint.name := 'MainPoint';
   MainPoint.OnMouseDown := MainPointMouseDown;
 
   //Создание начальной линии
@@ -183,6 +184,7 @@ const
 var
   Y: integer;
 begin
+  Y := 0;
   while Y <= Height do
   begin
     Canvas.MoveTo(RightBorder, Y);
@@ -231,7 +233,7 @@ var
   i: Integer;
   obj: TComponent;
   vrbl: TVariable;
-  ln: TLine;
+  ln: TLine;                     
   cnst: TConstant;
 begin
   ObjectDeletedFlag := false;
@@ -295,8 +297,6 @@ begin
 end;
 
 procedure TForm1.CheckRigthBorderIntr(Obj: TLine);
-var
-  ind: Integer;
 begin
   if ((Obj.Left + Obj.Width) >= RightBorder) and (not (Obj.Next is TTransferLine)) then
     MessageDlg(rightBorderMessage, mtInformation, [mbOK], 0)
@@ -326,7 +326,6 @@ end;
 
 procedure TForm1.ConstantCreate(Sender: TPoint);
 var
-  flag: Boolean;
   ln: TLine;
   buf_Component: TComponent;
 begin
@@ -352,7 +351,6 @@ end;
 
 procedure TForm1.ConstantAlternativeCreate(Sender: TPoint);
 var
-  i: Integer;
   Alt: TAlternative;
   PBuf: TComponent;
 begin
@@ -436,11 +434,8 @@ procedure TForm1.VariableCreate(Sender: TPoint);
 var
   buf_Component: TComponent;
   ln: TLine;
-  flag: Boolean;
 begin
   Variable := TVariable.Create(Form1);
-  Variable.StartSettings();
-  Variable.BorderStyle := bsNone;
 
   if ((Sender.Owner as TLine).Prev is TLine) and ((Sender.Owner as TLine).Next is TLine) then
   begin
@@ -452,14 +447,13 @@ begin
   end
   else
   begin
-    LineCreate(Sender);
-    Line.Prev := Variable;
-
-       //Перепривзяка при сдвиге
-    ReConnection(Sender);
-
     ln := Sender.Owner as TLine;
-       //Редактирование списка
+    LineCreate(Sender);
+
+    //Перепривзяка при сдвиге
+    if Sender.Name <> 'MainPoint' then
+    ReConnection(Sender);
+    //Редактирование списка
     buf_Component := ln.Next;
     ln.Next := Variable;
     Variable.Prev := ln;
@@ -471,7 +465,7 @@ begin
     else if (buf_Component is TSyntUnit) then
     begin
       (buf_Component as TSyntUnit).Prev := Line;
-      if (buf_Component is TSyntUnit) then
+      if (buf_Component is TAlternative) then
         (buf_Component as TAlternative).PPrevS[ln.subdepth - 1] := Line
     end
     else if (buf_Component is TTransferLine) then
@@ -484,17 +478,15 @@ end;
 
 procedure TForm1.VariableAlternativeCreate(Sender: TObject);
 var
-  i: Integer;
   ln: TLine;
   PBuf: TComponent;
 begin
   //Создание переменной
   Variable := TVariable.Create(Form1);
-  Variable.StartSettings();
   Variable.BorderStyle := bsNone;
 
   ln := (Sender as TPoint).Owner as TLine;
-  Variable.ALign;
+  Variable.ALign();
   Variable.isAlter := True;
   Variable.Altindex := ln.Altindex;
 
@@ -701,7 +693,6 @@ procedure TForm1.AlterCreate2(Sender: TPoint);
 var
   ind: Integer;
   obj: TSyntUnit;
-  i: Integer;
 begin
   //Первоначальное создание и настройка
   AlterStartSettings(ind);
@@ -767,8 +758,6 @@ begin
 end;
 
 procedure TForm1.AltCreateClick(Sender: TObject);
-var
-  i: Integer;
 begin
   if currentObject = 0 then
   begin
@@ -798,8 +787,6 @@ begin
 end;
 
 procedure TForm1.AltCreatUpperClick(Sender: TObject);
-var
-  i: Integer;
 begin
   if currentObject = 0 then
   begin
