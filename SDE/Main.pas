@@ -80,7 +80,7 @@ type
     procedure ShowLowerPoints(Sender: TPoint);
     procedure CheckRigthBorderIntr(Obj: TLine);
     procedure VariableCreate(Sender: TPoint);
-    procedure VariableAlternativeCreate(Sender: TObject);
+   // procedure VariableAlternativeCreate(Sender: TObject);
     procedure AlterCreate(Sender: TPoint);
     procedure AlterCreate2(Sender: TPoint);
     procedure TransferLineCreate(Sender: TPoint);
@@ -165,9 +165,6 @@ begin
   sb1VarDef.Left := edtVarDef.left - 5 - sb1VarDef.Width;
   sb2VarDef.Left := edtVarDef.left + edtVarDef.Width + 5;
   eq.Left := sb2VarDef.Left + sb2VarDef.Width + 5;
-
-  Application.ProcessMessages;
-  RedrawAll();
 end;
 
 procedure TForm1.ResetStatement();
@@ -476,41 +473,6 @@ begin
   ObjectsAlign(true);
 end;
 
-procedure TForm1.VariableAlternativeCreate(Sender: TObject);
-var
-  ln: TLine;
-  PBuf: TComponent;
-begin
-  //Создание переменной
-  Variable := TVariable.Create(Form1);
-  Variable.BorderStyle := bsNone;
-
-  ln := (Sender as TPoint).Owner as TLine;
-  Variable.ALign();
-  Variable.isAlter := True;
-  Variable.Altindex := ln.Altindex;
-
-  //Создание линии
-  Line := TLine.Create(Form1);
-
-  //Редактирование списка
-  PBuf := ln.Next;
-  ln.Next := Variable;
-  Variable.Prev := ln;
-  Variable.Next := Line;
-  Line.Prev := Variable;
-  Line.Next := PBuf;
-  if PBuf is TSyntSymbol then
-    (PBuf as TSyntSymbol).Prev := Line
-  else if PBuf is TSyntUnit then
-  begin
-    if PBuf is TLine then
-      (PBuf as TLine).Prev := Line
-    else
-      (PBuf as TAlternative).PPrevS[ln.SubDepth - 1] := Line
-  end;
-  AlterAlign(ln.Altindex, false, true);
-end;
 
 procedure TForm1.MainPointMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
@@ -552,7 +514,7 @@ begin
     Point := (Sender as TPoint);
     case currentObject of
       1:
-        VariableAlternativeCreate(Point);
+        VariableCreate(Point);
       2:
         ConstantAlternativeCreate(Point);
       5:

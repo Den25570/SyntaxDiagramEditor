@@ -33,7 +33,7 @@ begin
    Brush.Color := clLime;
    Pen.Color := clGreen;
    visible := False;
-   OnMouseDown := Form1.OnMouseDown;
+   OnMouseDown := Form1.MainPointMouseDown;
 end;
 
 end.
