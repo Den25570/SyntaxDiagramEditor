@@ -233,9 +233,7 @@ var
   ln: TLine;                     
   cnst: TConstant;
 begin
-  ObjectDeletedFlag := false;
-
-  obj := StartLine.Next;
+  obj := StartLine;
   while obj <> nil do
   begin
     if (obj is TVariable) then
@@ -258,6 +256,7 @@ begin
     else if (obj is TLine) then
     begin
       ln := obj as TLine;
+      ln.Width := LnW - MinW + ln.MinWidth;
       if ln.Prev is TSyntSymbol then
       begin
         ln.Top := (ln.prev as TSyntSymbol).Top + (ln.prev as TSyntSymbol).Height div 2 - ln.Height div 2 - 3;
@@ -283,7 +282,7 @@ begin
       (obj as TTransferLine).Align();
       obj := (obj as TTransferLine).Next;
     end;
-       //Смещение вниз, если преодолена правая граница
+
     if obj is TLine then
       CheckRigthBorderIntr(obj as TLine);
   end;
@@ -610,7 +609,7 @@ end;
 procedure TForm1.StartLineClick(Sender: TObject);
 begin
   if (Sender is TLine) then
-    edt1.Text := '-';
+    edt1.Text := IntToStr((Sender as TLine).width);
   if (Sender is TVariable) then
     edt1.Text := (Sender as TVariable).Text;
   if (Sender is TAlternative) then
@@ -654,7 +653,7 @@ end;
 procedure TForm1.AlterCreate2(Sender: TPoint);
 var
   ind: Integer;
-  obj: TSyntUnit;
+  obj: TLine;
 begin
   //Первоначальное создание и настройка
   AlterStartSettings(ind);
@@ -662,7 +661,7 @@ begin
   Alter[ind, 1].isUpper := isUpperChoice;
 
   //Привязка левого пилона и носителя
-  obj := (Sender.Owner as TSyntUnit);
+  obj := (Sender.Owner as TLine);
   obj.Altindex := ind;
   Alter[ind, 2].AltLineIndex := Sender.altLineIndex;
   Alter[ind, 2].carringObject := obj;
@@ -673,7 +672,7 @@ begin
     AlterEmptyCreate(Sender);
 
   //Привязка правого пилона и носителя
-  obj := (alt_Owner.Owner as TSyntUnit);
+  obj := (alt_Owner.Owner as TLine);
   obj.Altindex := ind;
   Alter[ind, 1].AltLineIndex := alt_Owner.altLineIndex;
   Alter[ind, 1].carringObject := obj;

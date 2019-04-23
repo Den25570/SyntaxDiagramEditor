@@ -3,8 +3,12 @@ unit AlterFunctions;
 interface
 
 uses
-  SysUtils,Messages, Classes, Controls, ExtCtrls, Forms, Line, Alternative, Point,
-  Variable, SyntUnit, QSyntSymbol, Constant;
+  SysUtils, Messages, Classes, Controls, ExtCtrls, Forms, Line, Alternative,
+  Point, Variable, SyntUnit, QSyntSymbol, Constant;
+
+type
+  TLines = array of TLine;
+  TArrayOfIndexes = array of integer;
 
 var
   Alter: array of array[1..2] of TAlternative;
@@ -19,10 +23,11 @@ procedure AltindexesShift(obj: TSyntUnit; alt_index: Integer);
 procedure AlterLineDraw(ind: integer);
 procedure AlterAlign(ind: integer; first, AlignAlter: boolean);
 procedure AlterVerticalAlign(ind: integer);
-procedure CalcLength(var Line_num, LineLength: Integer; index, subDepth: Integer);
 procedure AlterLeftShift(index, subDepth: integer);
 procedure AlterAddLineCreate(Sender: TPoint);
-procedure AlignAllAlternatives();
+procedure AlternativePylonsAlign(ind: integer);
+procedure CalcRealWidth(index, subDepth: integer; var TotalLength: Integer);
+procedure AlignNestingAlternative(ind : integer);
 function FindNextAlternative(ind: integer): integer;
 function FindTailAndCompare(ind1, ind2: integer): Boolean;
 function FindHeadAndCompare(ind1, ind2: integer): Boolean;
@@ -105,35 +110,110 @@ begin
   Alter[ind, 2].DrawLeftPylon;
 end;
 
-procedure AlignAllAlternatives();
+procedure CalcRealWidth(index, subDepth: integer; var TotalLength: Integer);
 var
-  i: Integer;
+  Edt: TVariable;
+  cnst: TConstant;
+  obj: TComponent;
 begin
-  for i := 0 to Length(Alter) - 1 do
-    AlterAlign(i, True, true);
+  TotalLength := 0;
+  obj := Alter[index, 2].PNextS[subDepth];
+  while (obj <> nil) and not (obj is Talternative) do
+    if (obj is TSyntSymbol) then
+    begin
+      if obj is TVariable then
+      begin
+        Edt := (obj as TVariable);
+        TotalLength := TotalLength + (Edt.SqrBra[2].Left + Edt.SqrBra[2].Width) - Edt.SqrBra[1].Left + 10;
+      end
+      else if obj is TConstant then
+      begin
+        cnst := (obj as TConstant);
+        TotalLength := TotalLength + cnst.Width + 10;
+      end;
+      obj := (obj as TSyntSymbol).Next;
+    end
+    else if obj is TLine then
+    begin
+      TotalLength := TotalLength + (obj as TLine).MinWidth;
+      obj := (obj as TLine).Next;
+    end
+end;
+
+function getLines(const ind, subdepth: integer): TLines;
+var
+  obj: TLine;
+begin
+  obj := Alter[ind, 2].PNextS[subdepth - 1];
+  Setlength(Result, 1);
+  Result[0] := obj;
+  while not (obj.Next is TAlternative) do
+  begin
+    obj := (obj.next as TSyntSymbol).next as TLine;
+    Setlength(Result, Length(Result) + 1);
+    Result[Length(Result) - 1] := obj;
+  end;
+end;
+
+procedure AlternativePylonsAlign(ind: integer);
+var
+  obj: TSyntUnit;
+begin
+  obj := Alter[ind, 2].carringObject;
+  Alter[ind, 2].Width := LnH div 2;
+  Alter[ind, 2].Left := obj.Left + Alter[ind, 2].Width * 2 * (Alter[ind, 2].AltLineIndex + 1);
+  Alter[ind, 2].addHeight := ShiftHeight * FindWithinAlternatives(ind);
+  Alter[ind, 2].Height := ShiftHeight + ShiftHeight div 2 - 5 + (ShiftHeight * (Alter[ind, 2].subDepth - 1)) + Alter[ind, 2].addHeight;
+  Alter[ind, 2].Top := obj.Top + (obj.Height div 2) + 1;
+  obj := Alter[ind, 1].carringObject;
+  Alter[ind, 1].Width := LnH div 2;
+  Alter[ind, 1].Left := obj.Left + obj.Width - Alter[ind, 1].Width - Alter[ind, 1].Width * 2 * (length((Alter[ind, 1].carringObject as TLine).Alternative) - Alter[ind, 1].AltLineIndex);
+  Alter[ind, 1].Height := Alter[ind, 2].Height;
+  Alter[ind, 1].Top := obj.Top + (obj.Height div 2) + 1;
+  if Alter[ind, 1].isUpper then
+    Alter[ind, 1].Top := Alter[ind, 1].Top - Alter[ind, 1].Height - ALTER[ind, 1].Canvas.pen.width;
+end;
+
+procedure AlignNestingAlternative(ind : integer);
+var
+ obj : TLine;
+begin
+   obj := Alter[ind,2].carringObject;
+   while not(obj.prev is TAlternative) and (obj.prev <> nil) do
+      obj := (obj.prev as TSyntSymbol).prev as TLine;
+   if (obj.prev is TAlternative) then
+     AlterAlign((obj.prev as TAlternative).AltIndex, True, true);
 end;
 
 procedure AlterAlign(ind: integer; first, AlignAlter: boolean);
 var
+  Lines: TLines;
   obj: TSyntUnit;
-  i: Integer;
+  cmp: TComponent;
+  i, j: Integer;
+  TotalLength: integer;
+  currentLength: integer;
 begin
-  obj := Alter[ind, 1].carringObject;
-  Alter[ind, 1].Width := LnH div 2;
-  Alter[ind, 2].Width := LnH div 2;
-
-  Alter[ind, 2].addHeight := ShiftHeight * FindWithinAlternatives(ind);
-  Alter[ind, 2].Height := ShiftHeight + ShiftHeight div 2 - 5 + (ShiftHeight * (Alter[ind, 2].subdepth - 1)) + Alter[ind, 2].addHeight;
-  Alter[ind, 1].Height := Alter[ind, 2].Height;
-
-  Alter[ind, 1].Left := obj.Left + obj.Width - Alter[ind, 2].Width - Alter[ind, 2].Width*2  * (length((Alter[ind, 1].carringObject as TLine).Alternative) - Alter[ind, 1].AltLineIndex);
-  Alter[ind, 1].Top := obj.Top + (obj.Height div 2)+1;
-  if Alter[ind, 1].isUpper then
-    Alter[ind, 1].Top := Alter[ind, 1].Top - Alter[ind, 1].Height - ALTER[ind, 1].Canvas.pen.width * 1;
-
-  obj := Alter[ind, 2].carringObject;
-  Alter[ind, 2].Left := obj.Left +   Alter[ind, 2].Width*2 * (Alter[ind, 2].AltLineIndex + 1);
-  Alter[ind, 2].Top := Alter[ind, 1].Top;
+  AlternativePylonsAlign(ind);
+  for i := 0 to Alter[ind, 2].subDepth - 1 do
+  begin
+    CalcRealWidth(ind, i, TotalLength);
+    currentLength := (Alter[ind, 1].Left - (Alter[ind, 2].Left + Alter[ind, 2].Width));
+    Lines := getLines(ind, Alter[ind, 2].subDepth);
+    if TotalLength > currentLength then
+      begin
+        for j := 0 to Length(Lines) - 1 do
+        Lines[j].Width := Lines[j].MinWidth;
+        Alter[ind, 1].carringObject.MinWidth := Alter[ind, 1].carringObject.MinWidth + (TotalLength - currentLength) div 2;
+        Alter[ind, 2].carringObject.MinWidth := Alter[ind, 2].carringObject.MinWidth + (TotalLength - currentLength + 1) div 2;
+        AlignNestingAlternative(ind);
+      end
+    else if TotalLength < currentLength then
+      for j := 0 to Length(Lines) - 1 do
+        Lines[j].Width := Lines[j].MinWidth + Abs(TotalLength - currentLength) div Length(Lines);
+    Form1.ObjectsAlign(false);
+    AlternativePylonsAlign(ind);
+  end;
 
   AlterVerticalAlign(ind);
 //  if CheckIntersection(ind) then
@@ -141,8 +221,7 @@ begin
      { TODO : Предупреждать о пересечении }
 
   //Выравнивание нижней части
-  if AlignAlter then
-    for i := 1 to Alter[ind, 1].subDepth do
+   for i := 1 to Alter[ind, 1].subDepth do
       AlterLeftShift(ind, i);
 end;
 
@@ -151,114 +230,25 @@ var
   i: integer;
   ln: TLine;
 begin
-  for i := Alter[ind, 2].SubDepth - 1 downto 0 do
+  for i := Alter[ind, 2].subDepth - 1 downto 0 do
   begin
     ln := (Alter[ind, 2].PNextS[i] as TLine);
-    ln.Top := Alter[ind, 2].Top + Alter[ind, 2].Height - ln.Height - ShiftHeight * ((Alter[ind, 2].SubDepth - 1) - i);
+    ln.Top := Alter[ind, 2].Top + Alter[ind, 2].Height - ln.Height - ShiftHeight * ((Alter[ind, 2].subDepth - 1) - i);
     if Alter[ind, 2].isUpper then
       ln.Top := Alter[ind, 2].Top + (Alter[ind, 2].Top + Alter[ind, 2].Height - ln.Top) - LnH;
   end;
 end;
 
-{procedure ExtendCarringObjects(const ind, width : integer);
-var
-  obj : TComponent;
-  rem_index : integer;
-begin
-  obj := Alter[ind, 2].carringObject;
-  rem_index := ind;
-  While (obj <> nil) do
-  begin
-     if obj is TSyntUnit then
-       obj := (obj as TSyntUnit).Prev
-     else if obj is TSyntSymbol then
-       obj := (obj as TSyntSymbol).Prev;
-     if obj is TAlternative then
-     begin
-       rem_index := (obj as TAlternative).altIndex;
-       obj := (obj as TAlternative).carringObject;
-     end;
-  end;
-  Alter[rem_index,1].carringObject.Width := Alter[rem_index,1].carringObject.Width + Width;
-  Alter[rem_index,2].carringObject.Width := Alter[rem_index,2].carringObject.Width + Width;
-end;   }
-
-procedure CalcLength(var Line_num, LineLength: Integer; index, subDepth: Integer);
-var
-  Edt: TVariable;
-  cnst: TConstant;
-  obj: TComponent;
-  Occupiedlength: Integer;
-  TotalLength: Integer;
-begin
-  Occupiedlength := 0;
-  Line_num := 0;
-  obj := Alter[index, 2].PNextS[subDepth - 1];
-  while obj <> nil do
-    if (obj is TSyntSymbol) then
-    begin
-      if obj is TVariable then
-      begin
-        Edt := (obj as TVariable);
-        Occupiedlength := Occupiedlength + (Edt.SqrBra[2].Left + Edt.SqrBra[2].Width) - Edt.SqrBra[1].Left + 10;
-      end
-      else if obj is TConstant then
-      begin
-        cnst := (obj as TConstant);
-        Occupiedlength := Occupiedlength + cnst.Width + 10;
-      end;
-      obj := (obj as TSyntSymbol).Next;
-    end
-    else if obj is TLine then
-    begin
-      Line_num := Line_num + 1;
-      Occupiedlength := Occupiedlength + (obj as TLine).CurrentWidth;
-      obj := (obj as TLine).Next;
-    end
-    else if (obj is Talternative) then
-      break;
-  TotalLength := Alter[index, 1].left - (Alter[index, 2].left + Alter[index, 2].width);
-  LineLength := TotalLength - Occupiedlength;
-  LineLength := (LineLength div Line_num);
-end;
-
 procedure AlterLeftShift(index, subDepth: integer);
 var
-  Line_num: Integer;
   ln: TLine;
   Edt: TVariable;
   obj: TComponent;
-  LineLength: Integer;
   cnst: TConstant;
 begin
-  CalcLength(Line_num, LineLength, index, subDepth);
-
-  //Если линия меньше минимального размера
-  if LineLength < MinW then
-  begin
-  //  ExtendCarringObjects(index, (MinW - LineLength));
-    (Alter[index,1].carringObject as TLine).CurrentWidth := (Alter[index,1].carringObject as TLine).CurrentWidth + (MinW - LineLength);
-    (Alter[index,2].carringObject as TLine).CurrentWidth := (Alter[index,2].carringObject as TLine).CurrentWidth + (MinW - LineLength);
-    Form1.ObjectsAlign(true);
-    Exit;
-  end;
-
-  //Если на уровне всего одна линия
-  if Line_num <= 1 then
-  begin
-    ln := (Alter[index, 2].PNextS[subDepth - 1] as TLine);
-    ln.Height := LnH;
-    ln.Left := Alter[index, 2].left + Alter[index, 2].Width;
-    ln.Width := Alter[index, 1].Left - ln.Left;
-    ln.Top := Alter[index, 2].Top + Alter[index, 2].Height - ln.Height - ShiftHeight * (Alter[index, 2].subDepth - subDepth);
-    if Alter[index, 2].isUpper then
-      ln.Top := Alter[index, 2].Top + (Alter[index, 2].Top + Alter[index, 2].Height - ln.Top) - LnH + 1;
-  end;
-
-  //Выравнивание уровней с более чем одной линией
+  //Выравнивание
   obj := Alter[index, 2].PNextS[subDepth - 1];
   ln := (obj as TLine);
-  ln.Width := LineLength;
   ln.Left := Alter[index, 2].left + Alter[index, 2].width;
   obj := (obj as TLine).Next;
   while obj <> nil do
@@ -283,7 +273,6 @@ begin
       if obj is TLine then
       begin
         ln := (obj as TLine);
-        ln.Width := LineLength;
         if (ln.prev is TVariable) then
           ln.Left := (ln.prev as TVariable).sqrBra[2].left + (ln.prev as TVariable).sqrBra[2].Width + 5
         else if (ln.prev is TConstant) then
@@ -299,8 +288,7 @@ begin
       else
         break;
   obj := Alter[index, 1].PPrevS[subDepth - 1];
-  (obj as TLine).width := Alter[index, 1].Left - (obj as TLine).Left;
-  Form1.RedrawAll();
+ // (obj as TLine).width := Alter[index, 1].Left - (obj as TLine).Left;
 end;
 
 procedure AlterAddLineCreate(Sender: TPoint);

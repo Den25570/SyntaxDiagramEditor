@@ -11,7 +11,7 @@ type
     PNextS: array of TLine;
     PPrevS: array of TLine;
     isUpper: Boolean;
-    carringObject: TSyntUnit;
+    carringObject: TLine;
     PylonShift: Integer;
     altLineIndex: Integer;
     addHeight: Integer;

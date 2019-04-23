@@ -9,6 +9,7 @@ type
   TLine = class(TSyntUnit)
   public
     hasArrow: boolean;
+    MinWidth : integer;
     constructor Create(Aowner : TComponent); 
     destructor Destroy();
     procedure LineDraw;
@@ -28,6 +29,7 @@ begin
   Parent := Form1;
   Height := LnH;
   Width := LnW;
+  MinWidth := MinW;
   hasArrow := True;
   OnClick := Form1.StartLineClick;
   PointCreate(Form1.MainPoint, Form1);
