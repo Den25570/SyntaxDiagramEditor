@@ -11,6 +11,7 @@ type
     PNextS: array of TLine;
     PPrevS: array of TLine;
     isUpper: Boolean;
+    isLoop : Boolean;
     carringObject: TLine;
     PylonShift: Integer;
     altLineIndex: Integer;

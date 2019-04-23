@@ -10,6 +10,7 @@ type
   public
     hasArrow: boolean;
     MinWidth : integer;
+    arrowReversed : boolean;
     constructor Create(Aowner : TComponent); 
     destructor Destroy();
     procedure LineDraw;
@@ -105,12 +106,23 @@ begin
   if hasArrow and not(Next is TLine) then
   begin
     Wdth := Width;
-    if (Next is TTransferLine) or (Next is TAlternative) then
+    if (Next is TTransferLine) or (Next is TAlternative) or (arrowReversed) then
       Wdth := Wdth div 2;
-    Canvas.MoveTo(Wdth, Height div 2);
-    Canvas.LineTo(Wdth - Height div 4 - 8, Height div 4);
-    Canvas.MoveTo(Wdth, Height div 2);
-    Canvas.LineTo(Wdth - Height div 4 - 8, Height - Height div 4);
+    if not arrowReversed then
+    begin
+      Canvas.MoveTo(Wdth, Height div 2);
+      Canvas.LineTo(Wdth - Height div 4 - 8, Height div 4);
+      Canvas.MoveTo(Wdth, Height div 2);
+      Canvas.LineTo(Wdth - Height div 4 - 8, Height - Height div 4);
+    end
+    else
+    begin
+      Canvas.MoveTo(Wdth, Height div 2);
+      Canvas.LineTo(Wdth + Height div 4 + 8, Height div 4);
+      Canvas.MoveTo(Wdth, Height div 2);
+      Canvas.LineTo(Wdth + Height div 4 + 8, Height - Height div 4);
+    end;
+
   end;
 end;
 

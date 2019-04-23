@@ -50,6 +50,7 @@ begin
   Line := TLine.Create(Form1);
   Line.subDepth := 1;
   Line.AltIndex := ind;
+  Line.arrowReversed := Form1.IsLoop;
   Line.Next := Alter[ind, 1];
   Line.Prev := Alter[ind, 2];
 
@@ -165,13 +166,18 @@ begin
   Alter[ind, 2].addHeight := ShiftHeight * FindWithinAlternatives(ind);
   Alter[ind, 2].Height := ShiftHeight + ShiftHeight div 2 - 5 + (ShiftHeight * (Alter[ind, 2].subDepth - 1)) + Alter[ind, 2].addHeight;
   Alter[ind, 2].Top := obj.Top + (obj.Height div 2) + 1;
+
   obj := Alter[ind, 1].carringObject;
   Alter[ind, 1].Width := LnH div 2;
   Alter[ind, 1].Left := obj.Left + obj.Width - Alter[ind, 1].Width - Alter[ind, 1].Width * 2 * (length((Alter[ind, 1].carringObject as TLine).Alternative) - Alter[ind, 1].AltLineIndex);
   Alter[ind, 1].Height := Alter[ind, 2].Height;
-  Alter[ind, 1].Top := obj.Top + (obj.Height div 2) + 1;
+  Alter[ind, 1].Top := Alter[ind, 2].Top;
   if Alter[ind, 1].isUpper then
+  begin
     Alter[ind, 1].Top := Alter[ind, 1].Top - Alter[ind, 1].Height - ALTER[ind, 1].Canvas.pen.width;
+    Alter[ind, 2].Top := Alter[ind, 2].Top - Alter[ind, 2].Height - ALTER[ind, 2].Canvas.pen.width;
+  end;
+
 end;
 
 procedure AlignNestingAlternative(ind : integer);

@@ -44,7 +44,7 @@ object Form1: TForm1
       Font.Name = 'Calibri Light'
       Font.Style = [fsItalic]
       ParentFont = False
-      TabOrder = 0
+      TabOrder = 1
       OnClick = VarTestCreateClick
     end
     object btn5: TBitBtn
@@ -59,7 +59,7 @@ object Form1: TForm1
       Font.Name = 'Times New Roman'
       Font.Style = []
       ParentFont = False
-      TabOrder = 1
+      TabOrder = 2
       OnClick = btn5Click
     end
     object edt1: TEdit
@@ -67,7 +67,7 @@ object Form1: TForm1
       Top = 120
       Width = 121
       Height = 24
-      TabOrder = 2
+      TabOrder = 0
     end
     object AltCreate: TBitBtn
       Left = 24
@@ -96,7 +96,7 @@ object Form1: TForm1
       Font.Name = 'Times New Roman'
       Font.Style = []
       ParentFont = False
-      TabOrder = 4
+      TabOrder = 7
       OnClick = AddAltClick
     end
     object ShowP: TBitBtn
@@ -105,7 +105,7 @@ object Form1: TForm1
       Width = 75
       Height = 25
       Caption = 'ShowP'
-      TabOrder = 5
+      TabOrder = 10
     end
     object AltCreatUpper: TBitBtn
       Left = 24
@@ -119,7 +119,7 @@ object Form1: TForm1
       Font.Name = 'Times New Roman'
       Font.Style = []
       ParentFont = False
-      TabOrder = 6
+      TabOrder = 4
       OnClick = AltCreatUpperClick
     end
     object Wtf: TBitBtn
@@ -128,7 +128,7 @@ object Form1: TForm1
       Width = 75
       Height = 25
       Caption = 'Wtf'
-      TabOrder = 7
+      TabOrder = 9
       OnClick = WtfClick
     end
     object TransferLine: TBitBtn
@@ -152,14 +152,14 @@ object Form1: TForm1
       Width = 137
       Height = 25
       Caption = 'Loop'
-      Enabled = False
       Font.Charset = RUSSIAN_CHARSET
       Font.Color = clWindowText
       Font.Height = -16
       Font.Name = 'Times New Roman'
       Font.Style = []
       ParentFont = False
-      TabOrder = 9
+      TabOrder = 5
+      OnClick = LoopClick
     end
     object UpperLoop: TBitBtn
       Left = 24
@@ -167,14 +167,14 @@ object Form1: TForm1
       Width = 137
       Height = 25
       Caption = 'UpperLoop'
-      Enabled = False
       Font.Charset = RUSSIAN_CHARSET
       Font.Color = clWindowText
       Font.Height = -16
       Font.Name = 'Times New Roman'
       Font.Style = []
       ParentFont = False
-      TabOrder = 10
+      TabOrder = 6
+      OnClick = UpperLoopClick
     end
   end
   object eq: TStaticText
@@ -189,7 +189,7 @@ object Form1: TForm1
     Font.Name = 'News706 BT'
     Font.Style = [fsBold]
     ParentFont = False
-    TabOrder = 1
+    TabOrder = 3
   end
   object edtVarDef: TEdit
     Left = 234
@@ -205,7 +205,7 @@ object Form1: TForm1
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
     ParentFont = False
-    TabOrder = 2
+    TabOrder = 4
     Text = #1087#1077#1088#1077#1084#1077#1085#1085#1072#1103
     OnChange = OnTextChange
   end
@@ -221,7 +221,7 @@ object Form1: TForm1
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
     ParentFont = False
-    TabOrder = 3
+    TabOrder = 1
   end
   object sb2VarDef: TStaticText
     Left = 336
@@ -235,7 +235,7 @@ object Form1: TForm1
     Font.Name = 'MS Sans Serif'
     Font.Style = [fsBold]
     ParentFont = False
-    TabOrder = 4
+    TabOrder = 2
   end
   object MainMenu: TMainMenu
     Left = 16

@@ -68,6 +68,8 @@ type
     procedure WtfClick(Sender: TObject);
     procedure TransferLineClick(Sender: TObject);
     procedure btn5Click(Sender: TObject);
+    procedure LoopClick(Sender: TObject);
+    procedure UpperLoopClick(Sender: TObject);
   private
     procedure ResetStatement();
     procedure ShowPoints();
@@ -80,7 +82,6 @@ type
     procedure ShowLowerPoints(Sender: TPoint);
     procedure CheckRigthBorderIntr(Obj: TLine);
     procedure VariableCreate(Sender: TPoint);
-   // procedure VariableAlternativeCreate(Sender: TObject);
     procedure AlterCreate(Sender: TPoint);
     procedure AlterCreate2(Sender: TPoint);
     procedure TransferLineCreate(Sender: TPoint);
@@ -93,6 +94,7 @@ type
     ObjectDeletedFlag: boolean;
     alt_Owner: TPoint;
     isUpperChoice: Boolean;
+    isLoop : Boolean;
 
     //ConstantElements
     StartLine: TLine;
@@ -445,7 +447,6 @@ begin
   begin
     ln := Sender.Owner as TLine;
     LineCreate(Sender);
-
     //Перепривзяка при сдвиге
     if Sender.Name <> 'MainPoint' then
     ReConnection(Sender);
@@ -468,6 +469,10 @@ begin
       (buf_Component as TTransferLine).Prev := Line
     else if (buf_Component = nil) then
       Component_List_Tail := Line;
+
+    if (Line.Prev is TSyntSymbol) then
+    Line.arrowReversed := ((Line.Prev as TSyntSymbol).Prev as TLine).arrowReversed;
+
   end;
   ObjectsAlign(true);
 end;
@@ -512,10 +517,6 @@ begin
   begin
     Point := (Sender as TPoint);
     case currentObject of
-      1:
-        VariableCreate(Point);
-      2:
-        ConstantAlternativeCreate(Point);
       5:
         AlterAddLineCreate(Point);
     end;
@@ -659,6 +660,8 @@ begin
   AlterStartSettings(ind);
   Alter[ind, 2].isUpper := isUpperChoice;
   Alter[ind, 1].isUpper := isUpperChoice;
+  Alter[ind, 2].isLoop := isLoop;
+  Alter[ind, 1].isLoop := isLoop;
 
   //Привязка левого пилона и носителя
   obj := (Sender.Owner as TLine);
@@ -725,6 +728,7 @@ begin
     ShowPointsOnLines();
     currentObject := 3;
     isUpperChoice := False;
+    isLoop := False;
   end
   else
     ResetStatement();
@@ -754,6 +758,7 @@ begin
     ShowPointsOnLines();
     currentObject := 3;
     isUpperChoice := True;
+    isLoop := False;
   end
   else
     ResetStatement();
@@ -787,6 +792,32 @@ begin
   begin
     ShowPoints();
     currentObject := 2;
+  end
+  else
+    ResetStatement();
+end;
+
+procedure TForm1.LoopClick(Sender: TObject);
+begin
+  if currentObject = 0 then
+  begin
+    ShowPointsOnLines();
+    currentObject := 3;
+    isUpperChoice := False;
+    isLoop := True;
+  end
+  else
+    ResetStatement();
+end;
+
+procedure TForm1.UpperLoopClick(Sender: TObject);
+begin
+  if currentObject = 0 then
+  begin
+    ShowPointsOnLines();
+    currentObject := 3;
+    isUpperChoice := True;
+    isLoop := True;
   end
   else
     ResetStatement();
