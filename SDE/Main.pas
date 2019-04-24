@@ -6,7 +6,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Mask, Menus, ExtCtrls, Buttons, Point, Variable, Line,
   Alternative, SyntUnit, TransferLine, AlterFunctions, QSyntSymbol, ShapeMod,
-  XPMan, Constant;
+  XPMan, Constant, States;
 
 type
   TArrayOfComponents = array of TComponent;
@@ -57,6 +57,7 @@ type
     S1: TMenuItem;
     DrawSettings1: TMenuItem;
     Help1: TMenuItem;
+    RestoreState: TBitBtn;
     procedure FormCreate(Sender: TObject);
     procedure OnTextChange(Sender: TObject);
     procedure MainPointMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -70,6 +71,7 @@ type
     procedure btn5Click(Sender: TObject);
     procedure LoopClick(Sender: TObject);
     procedure UpperLoopClick(Sender: TObject);
+    procedure RestoreStateClick(Sender: TObject);
   private
     procedure ResetStatement();
     procedure ShowPoints();
@@ -94,7 +96,7 @@ type
     ObjectDeletedFlag: boolean;
     alt_Owner: TPoint;
     isUpperChoice: Boolean;
-    isLoop : Boolean;
+    isLoop: Boolean;
 
     //ConstantElements
     StartLine: TLine;
@@ -108,6 +110,7 @@ type
     Variable: TVariable;
     Constant: TConstant;
     TrLines: array of TTransferLine;
+    ProgramStates: TState;
     procedure ObjectsAlign(AlignAlter: boolean);
     procedure RedrawAll();
   end;
@@ -232,10 +235,12 @@ var
   i: Integer;
   obj: TComponent;
   vrbl: TVariable;
-  ln: TLine;                     
+  ln: TLine;
   cnst: TConstant;
 begin
-  obj := StartLine;
+  obj := Component_List_head;
+  (obj as TLine).Left := sb1VarDef.Left;
+  (obj as TLine).Top := sb1VarDef.Top + LnW;
   while obj <> nil do
   begin
     if (obj is TVariable) then
@@ -355,8 +360,6 @@ begin
   //Создание переменной
   Constant.StartSettings();
   Alt := Sender.Owner as TAlternative;
-  Constant.isAlter := True;
-  Constant.Altindex := Alt.Altindex;
 
   //Создание линии
   Line := TLine.Create(Form1);
@@ -449,7 +452,7 @@ begin
     LineCreate(Sender);
     //Перепривзяка при сдвиге
     if Sender.Name <> 'MainPoint' then
-    ReConnection(Sender);
+      ReConnection(Sender);
     //Редактирование списка
     buf_Component := ln.Next;
     ln.Next := Variable;
@@ -471,12 +474,11 @@ begin
       Component_List_Tail := Line;
 
     if (Line.Prev is TSyntSymbol) then
-    Line.arrowReversed := ((Line.Prev as TSyntSymbol).Prev as TLine).arrowReversed;
+      Line.arrowReversed := ((Line.Prev as TSyntSymbol).Prev as TLine).arrowReversed;
 
   end;
   ObjectsAlign(true);
 end;
-
 
 procedure TForm1.MainPointMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
@@ -768,11 +770,7 @@ procedure TForm1.WtfClick(Sender: TObject);
 var
   i, j: integer;
 begin
-  j := 0;
-  for i := 0 to ComponentCount - 1 do
-    if Components[i] is TLine then
-      Inc(j);
-  ShowMessage('lines: ' + IntToStr(j));
+  SaveProgramState();
 end;
 
 procedure TForm1.TransferLineClick(Sender: TObject);
@@ -821,6 +819,11 @@ begin
   end
   else
     ResetStatement();
+end;
+
+procedure TForm1.RestoreStateClick(Sender: TObject);
+begin
+  RestoreProgramState();
 end;
 
 end.

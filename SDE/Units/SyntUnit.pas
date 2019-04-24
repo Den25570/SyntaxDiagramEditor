@@ -17,7 +17,9 @@ type
     SubDepth: integer;
     AltIndex : Integer;
     CurrentWidth : Integer;
+    addres : Integer;
 
+    destructor Destroy();
     procedure PointCreate(MPoint:TShape; Form : TForm);  virtual; abstract;
     procedure ShowPoints;  virtual; abstract;
     procedure HidePoints;
@@ -26,6 +28,15 @@ type
 
 
 implementation
+
+destructor TSyntUnit.Destroy();
+var
+  i : integer;
+begin
+  for i := Length(Points)-1 downto 0 do
+    Points[i].Destroy();
+  inherited;
+end;
 
 procedure TSyntUnit.HidePoints;
 var

@@ -26,6 +26,4 @@ begin
   Form1.Constant.OnChange := Form1.OnTextChange;
 end;
 
-
-
 end.

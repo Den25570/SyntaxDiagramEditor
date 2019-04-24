@@ -11,6 +11,7 @@ type
   public
     Prev: TLine;
     Next: TLine;
+    addres : Integer;
     TrLnElems: array[1..3] of TPaintBox;
     procedure StartSettings(Sender: TLine);
     procedure Align();

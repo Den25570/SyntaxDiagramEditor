@@ -8,14 +8,17 @@ uses
 type
   TAlternative = class(TSyntUnit)
   public
+
     PNextS: array of TLine;
     PPrevS: array of TLine;
+
     isUpper: Boolean;
     isLoop : Boolean;
     carringObject: TLine;
     PylonShift: Integer;
     altLineIndex: Integer;
     addHeight: Integer;
+
     procedure DrawleftPylon();
     procedure DrawRightPylon();
     procedure PointCreate(MPoint: TShape; Form: TForm);

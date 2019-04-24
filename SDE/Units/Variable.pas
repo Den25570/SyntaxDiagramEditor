@@ -29,8 +29,6 @@ begin
   OnClick := Form1.StartLineClick;
   BorderStyle := bsNone;
   PopupMenu := Form1.pm1;
-  Altindex := -1;
-  isAlter := false;
   sqrBra[1] := TStaticText.Create(Form1);
   sqrBra[2] := TStaticText.Create(Form1);
   sqrBra[1].Parent := Form1;

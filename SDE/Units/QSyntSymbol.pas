@@ -11,9 +11,7 @@ type
     //List connections
     Prev : TSyntUnit;
     Next : TSyntUnit;
-
-    isAlter : boolean;
-    AltIndex : Integer;
+    addres : Integer;
   end;
 
 implementation

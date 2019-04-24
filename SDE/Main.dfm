@@ -105,7 +105,7 @@ object Form1: TForm1
       Width = 75
       Height = 25
       Caption = 'ShowP'
-      TabOrder = 10
+      TabOrder = 11
     end
     object AltCreatUpper: TBitBtn
       Left = 24
@@ -128,7 +128,7 @@ object Form1: TForm1
       Width = 75
       Height = 25
       Caption = 'Wtf'
-      TabOrder = 9
+      TabOrder = 10
       OnClick = WtfClick
     end
     object TransferLine: TBitBtn
@@ -175,6 +175,15 @@ object Form1: TForm1
       ParentFont = False
       TabOrder = 6
       OnClick = UpperLoopClick
+    end
+    object RestoreState: TBitBtn
+      Left = 40
+      Top = 576
+      Width = 113
+      Height = 25
+      Caption = 'RestoreState'
+      TabOrder = 9
+      OnClick = RestoreStateClick
     end
   end
   object eq: TStaticText

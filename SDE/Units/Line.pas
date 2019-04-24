@@ -37,11 +37,7 @@ begin
 end;
 
 destructor  TLine.Destroy();
-var
-  i : integer;
 begin
-  for i := Length(Points)-1 downto 0 do
-    Points[i].Destroy();
   inherited;
 end;
 

@@ -150,6 +150,7 @@ begin
   Result[0] := obj;
   while not (obj.Next is TAlternative) do
   begin
+     //Bug alternative empty
     obj := (obj.next as TSyntSymbol).next as TLine;
     Setlength(Result, Length(Result) + 1);
     Result[Length(Result) - 1] := obj;
@@ -375,7 +376,7 @@ var
 begin
   Result := -1;
   ln := Alter[ind, 2].carringObject as TLine;
-  Line_index := Alter[ind, 2].AltLineIndex;
+  Line_index := Alter[ind, 2].AltLineIndex;                              
   while (ln <> (Alter[ind, 1].carringObject as TLine)) do
   begin
     for i := Line_index + 1 to Length(ln.alternative) - 1 do
@@ -388,7 +389,7 @@ begin
     end;
     if (ln.Next) is TSyntSymbol then
       ln := ((ln.Next) as TSyntSymbol).Next as TLine
-    else if (ln.Next) is TSyntUnit then
+    else if (ln.Next) is TSyntUnit then                   //w  w w
       ln := ((ln.Next) as TSyntUnit).Next as TLine;
     Line_index := -1;
   end;
