@@ -73,29 +73,19 @@ var
   Syntunits: array of TSyntUnit;
 
 procedure RestoreProgramState();
-
 procedure SaveProgramState();
-
 procedure DeleteAllObjects();
-
+procedure DeleteState();
+procedure NewState();
 procedure restoreLines(State: TStatePointer);
-
 procedure restoreAlternatives(State: TStatePointer);
-
 procedure restoreSyntUnits(State: TStatePointer);
-
 procedure restoreTrLines(State: TStatePointer);
-
 procedure ReconnectAll(State: TStatePointer);
-
 function TransformLine(Line: TLine): TLineProperties;
-
 function TransformAlter(Alter: TAlternative): TAlternativeProperties;
-
 function TransformSyntSymbol(SyntSymbol: TSyntSymbol): TSyntSymbolProperties;
-
 function TransformTrLine(TrLine: TTransferLine): TTrLinesProperties;
-
 function FindObjectWithAddress(State: TStatePointer; Address: integer): TComponent;
 
 implementation
@@ -275,17 +265,19 @@ begin
   begin
     SyntSymbols[i].Next := FindObjectWithAddress(State, State^.SyntSymbols[i].Next) as TSyntUnit;
     SyntSymbols[i].prev := FindObjectWithAddress(State, State^.SyntSymbols[i].prev) as TSyntUnit;
+    SyntSymbols[i].OnChange := Form1.OnTextChange;
   end;
   for i := 0 to Length(TrLines) - 1 do
   begin
     TrLines[i].Next := FindObjectWithAddress(State, State^.TrLines[i].Next) as TLine;
     TrLines[i].prev := FindObjectWithAddress(State, State^.TrLines[i].prev) as TLine;
   end;
+  for i := 0 to Length(State^.SyntSymbols) - 1 do
+    Form1.OnTextChange(SyntSymbols[i]);
 end;
 
 procedure RestoreProgramState();
 var
-  buf_State: TStatePointer;
   State: TState;
 begin
   if Pstates_head <> nil then
@@ -293,22 +285,39 @@ begin
     State := Pstates_head^;
     DeleteAllObjects();
     restoreLines(Pstates_head);
-    restoreAlternatives(Pstates_head);                //*
+    restoreAlternatives(Pstates_head);
     restoreSyntUnits(Pstates_head);
     restoreTrLines(Pstates_head);
     ReconnectAll(Pstates_head);
 
-    buf_State := Pstates_head;
-    Pstates_head := Pstates_head^.Next;
-    Dispose(buf_State);
     SetLength(Lines, 0);
     SetLength(Alternatives, 0);
     SetLength(SyntSymbols, 0);
     SetLength(TrLines, 0);
     SetLength(Syntunits, 0);
 
+    DeleteState();
+    Form1.objectsAlign(true);
     Form1.objectsAlign(true);
   end;
+end;
+
+procedure DeleteState();
+var
+  buf_State: TStatePointer;
+begin
+  buf_State := Pstates_head;
+  Pstates_head := Pstates_head^.Next;
+  Dispose(buf_State);
+end;
+
+procedure NewState();
+var
+  PState: TStatePointer;
+begin
+  New(PState);
+  PState^.Next := Pstates_head;
+  Pstates_head := PState;
 end;
 
 procedure SaveProgramState();
@@ -316,9 +325,8 @@ var
   PState: TStatePointer;
   i: integer;
 begin
-  New(PState);
-  PState^.Next := Pstates_head;
-  Pstates_head := PState;
+  NewState();
+  PState := Pstates_head;
 
   for i := 0 to Form1.ComponentCount - 1 do
   begin

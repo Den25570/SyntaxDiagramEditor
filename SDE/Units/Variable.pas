@@ -25,7 +25,6 @@ begin
   font := Form1.edtVarDef.Font;
   Text := 'переменная';
   Width := Form1.Canvas.TextWidth('переменная');
-  OnChange := Form1.OnTextChange;
   OnClick := Form1.StartLineClick;
   BorderStyle := bsNone;
   PopupMenu := Form1.pm1;

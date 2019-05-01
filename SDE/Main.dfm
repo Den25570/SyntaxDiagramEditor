@@ -1,13 +1,13 @@
 object Form1: TForm1
-  Left = 344
-  Top = 185
+  Left = 323
+  Top = 166
   HelpType = htKeyword
   HelpKeyword = 'MainWindow'
   BorderIcons = [biSystemMenu]
   BorderStyle = bsSingle
   Caption = 'SDE'
-  ClientHeight = 676
-  ClientWidth = 1361
+  ClientHeight = 675
+  ClientWidth = 1389
   Color = clWhite
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -17,17 +17,18 @@ object Form1: TForm1
   Menu = MainMenu
   OldCreateOrder = False
   Position = poScreenCenter
+  OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   DesignSize = (
-    1361
-    676)
+    1389
+    675)
   PixelsPerInch = 96
   TextHeight = 16
   object Panel1: TPanel
     Left = 0
     Top = 0
     Width = 185
-    Height = 676
+    Height = 675
     Hint = 'adg'
     Align = alLeft
     TabOrder = 0
@@ -105,7 +106,7 @@ object Form1: TForm1
       Width = 75
       Height = 25
       Caption = 'ShowP'
-      TabOrder = 11
+      TabOrder = 10
     end
     object AltCreatUpper: TBitBtn
       Left = 24
@@ -128,7 +129,7 @@ object Form1: TForm1
       Width = 75
       Height = 25
       Caption = 'Wtf'
-      TabOrder = 10
+      TabOrder = 9
       OnClick = WtfClick
     end
     object TransferLine: TBitBtn
@@ -176,15 +177,6 @@ object Form1: TForm1
       TabOrder = 6
       OnClick = UpperLoopClick
     end
-    object RestoreState: TBitBtn
-      Left = 40
-      Top = 576
-      Width = 113
-      Height = 25
-      Caption = 'RestoreState'
-      TabOrder = 9
-      OnClick = RestoreStateClick
-    end
   end
   object eq: TStaticText
     Left = 356
@@ -201,7 +193,7 @@ object Form1: TForm1
     TabOrder = 3
   end
   object edtVarDef: TEdit
-    Left = 234
+    Left = 232
     Top = 56
     Width = 97
     Height = 17
@@ -253,21 +245,35 @@ object Form1: TForm1
       Caption = 'File'
       object Open1: TMenuItem
         Caption = 'Open...'
+        ShortCut = 16463
+        OnClick = Open1Click
       end
       object Save1: TMenuItem
         Caption = 'Save'
+        ShortCut = 16467
+        OnClick = Save1Click
       end
       object Saveas1: TMenuItem
         Caption = 'Save as...'
+        OnClick = Saveas1Click
       end
       object Newpage1: TMenuItem
         Caption = 'New page'
-      end
-      object Closepage1: TMenuItem
-        Caption = 'Close page'
+        ShortCut = 16462
+        OnClick = Newpage1Click
       end
       object Exit1: TMenuItem
         Caption = 'Exit'
+        ShortCut = 16453
+        OnClick = Exit1Click
+      end
+      object N1: TMenuItem
+        Caption = '-'
+      end
+      object N2: TMenuItem
+        Caption = 'undo'
+        ShortCut = 16474
+        OnClick = N2Click
       end
     end
     object Options1: TMenuItem
@@ -286,9 +292,11 @@ object Form1: TForm1
       Caption = 'Drawing'
       object Line1: TMenuItem
         Caption = 'Variable'
+        ShortCut = 16470
       end
       object Constant1: TMenuItem
         Caption = 'Constant'
+        ShortCut = 16451
       end
       object Alternative1: TMenuItem
         Caption = 'Alternative'
@@ -326,6 +334,16 @@ object Form1: TForm1
   end
   object xpmnfst1: TXPManifest
     Left = 48
+    Top = 8
+  end
+  object dlgOpen: TOpenDialog
+    Filter = '*.SDE|*.SDE'
+    Left = 112
+    Top = 8
+  end
+  object dlgSave: TSaveDialog
+    Filter = '*.SDE|*.SDE'
+    Left = 144
     Top = 8
   end
 end

@@ -498,6 +498,6 @@ begin
     new_index := FindNextAlternative(new_index);
   end;
 end;
-
+                                                                                     //w
 end.
 

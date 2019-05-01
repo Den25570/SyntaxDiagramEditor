@@ -6,7 +6,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Mask, Menus, ExtCtrls, Buttons, Point, Variable, Line,
   Alternative, SyntUnit, TransferLine, AlterFunctions, QSyntSymbol, ShapeMod,
-  XPMan, Constant, States;
+  XPMan, Constant, States, FileControl, Registry, ComCtrls;
 
 type
   TArrayOfComponents = array of TComponent;
@@ -24,7 +24,6 @@ type
     Open1: TMenuItem;
     Exit1: TMenuItem;
     Newpage1: TMenuItem;
-    Closepage1: TMenuItem;
     Language1: TMenuItem;
     Panel1: TPanel;
     eq: TStaticText;
@@ -57,7 +56,10 @@ type
     S1: TMenuItem;
     DrawSettings1: TMenuItem;
     Help1: TMenuItem;
-    RestoreState: TBitBtn;
+    N1: TMenuItem;
+    N2: TMenuItem;
+    dlgOpen: TOpenDialog;
+    dlgSave: TSaveDialog;
     procedure FormCreate(Sender: TObject);
     procedure OnTextChange(Sender: TObject);
     procedure MainPointMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -72,7 +74,15 @@ type
     procedure LoopClick(Sender: TObject);
     procedure UpperLoopClick(Sender: TObject);
     procedure RestoreStateClick(Sender: TObject);
+    procedure N2Click(Sender: TObject);
+    procedure Exit1Click(Sender: TObject);
+    procedure Open1Click(Sender: TObject);
+    procedure Save1Click(Sender: TObject);
+    procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+    procedure Saveas1Click(Sender: TObject);
+    procedure Newpage1Click(Sender: TObject);
   private
+    isModified: Boolean;
     procedure ResetStatement();
     procedure ShowPoints();
     procedure ShowPointsOnLines();
@@ -111,6 +121,7 @@ type
     Constant: TConstant;
     TrLines: array of TTransferLine;
     ProgramStates: TState;
+
     procedure ObjectsAlign(AlignAlter: boolean);
     procedure RedrawAll();
   end;
@@ -141,10 +152,17 @@ var
 
 implementation
 
+uses
+  ShellAPI;
+
 {$R *.dfm}
 
 procedure TForm1.FormCreate(Sender: TObject);
+var
+  i: integer;
 begin
+
+  //Главная точка
   MainPoint := TPoint.Create(Form1);
   MainPoint.Parent := Form1;
   MainPoint.Width := 9;
@@ -158,8 +176,9 @@ begin
 
   //Создание начальной линии
   StartLine := TLine.Create(Form1);
-  StartLine.Left := sb1VarDef.Left;
-  StartLine.Top := sb1VarDef.Top + LnW;
+  StartLine.Parent := Form1;
+ // StartLine.Left := sb1VarDef.Left;
+ // StartLine.Top := sb1VarDef.Top + LnW;
 
   // Задание списка
   Component_List_head := StartLine;
@@ -170,6 +189,19 @@ begin
   sb1VarDef.Left := edtVarDef.left - 5 - sb1VarDef.Width;
   sb2VarDef.Left := edtVarDef.left + edtVarDef.Width + 5;
   eq.Left := sb2VarDef.Left + sb2VarDef.Width + 5;
+
+  if ParamCount > 0 then
+  begin
+    FilePath := ParamStr(1);
+    for i := 2 to ParamCount do
+      FilePath := FilePath + ' ' + ParamStr(i);
+    AssignF(FilePath);
+    ReadFromFile();
+  end;
+  isModified := False;
+
+  ObjectsAlign(false);
+
 end;
 
 procedure TForm1.ResetStatement();
@@ -216,7 +248,9 @@ begin
     begin
       (Components[i] as TVariable).sqrBra[1].Repaint;
       (Components[i] as TVariable).sqrBra[2].Repaint;
-    end;
+    end
+    else if (Components[i] is TButton) then
+      (Components[i] as TButton).Repaint
   end;
   for i := 0 to length(Alter) - 1 do
     AlterLineDraw(i);
@@ -238,6 +272,9 @@ var
   ln: TLine;
   cnst: TConstant;
 begin
+  sb2VarDef.Left := edtVarDef.left + edtVarDef.Width + 5;
+  eq.Left := sb2VarDef.left + sb2VarDef.Width + 5;
+
   obj := Component_List_head;
   (obj as TLine).Left := sb1VarDef.Left;
   (obj as TLine).Top := sb1VarDef.Top + LnW;
@@ -309,6 +346,8 @@ procedure TForm1.TransferLineCreate(Sender: TPoint);
 var
   ind: Integer;
 begin
+  isModified := true;
+  SaveProgramState();
   ind := Length(TrLines);
   SetLength(TrLines, ind + 1);
   TrLines[ind] := TTransferLine.Create(Form1);
@@ -332,6 +371,8 @@ var
   ln: TLine;
   buf_Component: TComponent;
 begin
+  isModified := true;
+  SaveProgramState();
   Constant.StartSettings();
   Line := TLine.Create(Form1);
 
@@ -349,6 +390,7 @@ begin
     (buf_Component as TTransferLine).Prev := Line
   else if buf_Component = nil then
     Component_List_tail := Line;
+  Constant.OnChange := OnTextChange;
   ObjectsAlign(true);
 end;
 
@@ -357,6 +399,8 @@ var
   Alt: TAlternative;
   PBuf: TComponent;
 begin
+  isModified := true;
+  SaveProgramState();
   //Создание переменной
   Constant.StartSettings();
   Alt := Sender.Owner as TAlternative;
@@ -382,16 +426,17 @@ begin
   end;
 
   ObjectsAlign(true);
-
 end;
 
 procedure TForm1.OnTextChange(Sender: TObject);
 begin
+//  SaveProgramState();
+  isModified := true;
   if Length((Sender as TEdit).text) = 0 then
     (Sender as TEdit).text := (Sender as TEdit).text + ' ';
 
   (Sender as TEdit).Width := Canvas.TextWidth((Sender as TEdit).text);
-  ObjectsAlign(true)
+  ObjectsAlign(true);
 end;
 
 
@@ -436,8 +481,9 @@ var
   buf_Component: TComponent;
   ln: TLine;
 begin
+  isModified := true;
+  SaveProgramState();
   Variable := TVariable.Create(Form1);
-
   if ((Sender.Owner as TLine).Prev is TLine) and ((Sender.Owner as TLine).Next is TLine) then
   begin
     Variable.Next := (Sender.Owner as TLine).Next as TSyntUnit;
@@ -477,6 +523,8 @@ begin
       Line.arrowReversed := ((Line.Prev as TSyntSymbol).Prev as TLine).arrowReversed;
 
   end;
+  Variable.OnChange := OnTextChange;
+  ObjectsAlign(true);
   ObjectsAlign(true);
 end;
 
@@ -529,6 +577,7 @@ end;
 
 procedure TForm1.LineCreate(Sender: TPoint);
 begin
+  isModified := true;
   Line := TLine.Create(Form1);
   Line.SubDepth := Sender.SubDepth;
   Line.Points[0].SubDepth := Sender.SubDepth;
@@ -571,6 +620,7 @@ var
   Ln: TLine;
   Alternative: TAlternative;
 begin
+  RedrawAll();
   ShowMainPoint();
   for i := 0 to ComponentCount - 1 do
   begin
@@ -658,6 +708,7 @@ var
   ind: Integer;
   obj: TLine;
 begin
+  SaveProgramState();
   //Первоначальное создание и настройка
   AlterStartSettings(ind);
   Alter[ind, 2].isUpper := isUpperChoice;
@@ -697,6 +748,7 @@ procedure TForm1.AlterEmptyCreate(Sender: TPoint);
 var
   buf_comp: TComponent;
 begin
+  SaveProgramState();
   LineCreate(Sender);
   buf_comp := (Sender.Owner as TLine).Next;
   (Sender.Owner as TLine).Next := Line;
@@ -767,8 +819,6 @@ begin
 end;
 
 procedure TForm1.WtfClick(Sender: TObject);
-var
-  i, j: integer;
 begin
   SaveProgramState();
 end;
@@ -824,6 +874,88 @@ end;
 procedure TForm1.RestoreStateClick(Sender: TObject);
 begin
   RestoreProgramState();
+end;
+
+procedure TForm1.N2Click(Sender: TObject);
+begin
+  RestoreProgramState();
+end;
+
+procedure TForm1.Exit1Click(Sender: TObject);
+begin
+  Form1.Close();
+end;
+
+procedure TForm1.Open1Click(Sender: TObject);
+begin
+  if dlgOpen.Execute then
+  begin
+    FilePath := dlgOpen.FileName;
+    AssignF(FilePath);
+    ReadFromFile();
+  end;
+end;
+
+//Run only with administrator rights!!
+procedure ExtensionRegister();
+var
+  reg: Tregistry;
+begin
+  reg := TRegistry.Create();
+  with reg do
+  begin
+    RootKey := HKEY_CLASSES_ROOT;
+    OpenKey('.sde', true);
+    WriteString('', 'SDE');
+    CloseKey;
+
+    CreateKey('SDE');
+    OpenKey('SDE\DefaultIcon', true);
+    WriteString('', Application.ExeName + ', 0');
+    CloseKey;
+
+    OpenKey('SDE\shell\open\command', true);
+    WriteString('', Application.ExeName + ' %1');
+    CloseKey;
+    Free;
+  end;
+end;
+
+procedure TForm1.Save1Click(Sender: TObject);
+begin
+  WriteinFile();
+end;
+
+procedure TForm1.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+var
+  buttonSelected: Integer;
+begin
+  CanClose := True;
+  if isModified then
+  begin
+    buttonSelected := MessageDlg('Save Changes?', mtConfirmation, mbYesNoCancel, 0);
+    if buttonSelected = mrYes then
+      WriteinFile()
+    else if buttonSelected = mrCancel then
+      CanClose := False;
+  end;
+end;
+
+procedure TForm1.Saveas1Click(Sender: TObject);
+begin
+  if dlgSave.Execute then
+  begin
+    FilePath := dlgSave.FileName;
+    AssignF(FilePath);
+    WriteInFile();
+  end;
+end;
+
+procedure TForm1.Newpage1Click(Sender: TObject);
+begin
+ // Page := TTabSheet.Create(Form1);
+ // Page.PageControl := PageControl;
+ // Page.Caption := 'Page_'+IntToStr(PageControl.PageCount);
 end;
 
 end.
