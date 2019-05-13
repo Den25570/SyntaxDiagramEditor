@@ -5,13 +5,15 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, Mask, Menus, ExtCtrls, Buttons, Point, Variable, Line,
-  Alternative, SyntUnit, TransferLine, AlterFunctions, QSyntSymbol, ShapeMod,
-  XPMan, Constant, States, FileControl, Registry, ComCtrls;
+  Alternative, SyntUnit, TransferLine, AlterFunctions, QSyntSymbol, XPMan,
+  Constant, States, FileControl, Registry, ComCtrls, ExportUnit, MainMenu;
 
 type
   TArrayOfComponents = array of TComponent;
 
   TArrayOfinteger = array of Integer;
+
+  TShowPoint = procedure;
 
 type
   TForm1 = class(TForm)
@@ -37,10 +39,8 @@ type
     E1: TMenuItem;
     AltCreate: TBitBtn;
     AddAlt: TBitBtn;
-    ShowP: TBitBtn;
     AltCreatUpper: TBitBtn;
     xpmnfst1: TXPManifest;
-    Wtf: TBitBtn;
     TransferLine: TBitBtn;
     Loop: TBitBtn;
     UpperLoop: TBitBtn;
@@ -60,6 +60,13 @@ type
     N2: TMenuItem;
     dlgOpen: TOpenDialog;
     dlgSave: TSaveDialog;
+    clear: TBitBtn;
+    BMP1: TMenuItem;
+    JPEG1: TMenuItem;
+    SVG1: TMenuItem;
+    N3: TMenuItem;
+    XML1: TMenuItem;
+    HTML1: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure OnTextChange(Sender: TObject);
     procedure MainPointMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -80,7 +87,12 @@ type
     procedure Save1Click(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure Saveas1Click(Sender: TObject);
-    procedure Newpage1Click(Sender: TObject);
+    procedure clearClick(Sender: TObject);
+    procedure BMP1Click(Sender: TObject);
+    procedure JPEG1Click(Sender: TObject);
+    procedure SVG1Click(Sender: TObject);
+    procedure XML1Click(Sender: TObject);
+    procedure HTML1Click(Sender: TObject);
   private
     isModified: Boolean;
     procedure ResetStatement();
@@ -89,16 +101,14 @@ type
     procedure ShowMainPoint();
     procedure HidePoints();
     procedure LineCreate(Sender: TPoint);
-    procedure DrawRightBorder();
     procedure ReConnection(Sender: TPoint);
+    procedure ListEdit(Sender: TPoint; SyntSymbol: TSyntSymbol);
     procedure ShowLowerPoints(Sender: TPoint);
-    procedure CheckRigthBorderIntr(Obj: TLine);
     procedure VariableCreate(Sender: TPoint);
     procedure AlterCreate(Sender: TPoint);
     procedure AlterCreate2(Sender: TPoint);
     procedure TransferLineCreate(Sender: TPoint);
     procedure AlterEmptyCreate(Sender: TPoint);
-    procedure ConstantAlternativeCreate(Sender: TPoint);
     procedure ConstantCreate(Sender: TPoint);
   public
     //Statement variables
@@ -121,7 +131,6 @@ type
     Constant: TConstant;
     TrLines: array of TTransferLine;
     ProgramStates: TState;
-
     procedure ObjectsAlign(AlignAlter: boolean);
     procedure RedrawAll();
   end;
@@ -132,10 +141,13 @@ const
   LnW = 80;             //Стандартная длина
   LnH = 30;             //Стандартная высота
   ShiftHeight = 40;     //Расстояние между элементами альтернативы
-  RightBorder = 1307;   //Правая граница
-  LeftBorder = 208;     //Левая граница
+  TopBorder = 100;
+  LeftBorder = 30;
+  RightBorder = 100;
+  SBDistance = 5;
+  VarDefStrtLnDistance = 50;
+  ElemDistance = 5;
   AlternativeHeight = ShiftHeight + ShiftHeight + ShiftHeight div 2 - 5;
-  rightBorderMessage = 'You''ve reached right border' + #10 + 'if you want to continue drawing add transfer line or accept line compression';
 
   // currentObject - Statements
   // 1 - Variable
@@ -161,34 +173,12 @@ procedure TForm1.FormCreate(Sender: TObject);
 var
   i: integer;
 begin
-
-  //Главная точка
   MainPoint := TPoint.Create(Form1);
-  MainPoint.Parent := Form1;
-  MainPoint.Width := 9;
-  MainPoint.Height := 17;
-  MainPoint.Brush.Color := clLime;
-  MainPoint.Pen.Color := clGreen;
-  MainPoint.Visible := False;
-  MainPoint.Shape := stRoundSquare;
   MainPoint.name := 'MainPoint';
-  MainPoint.OnMouseDown := MainPointMouseDown;
-
-  //Создание начальной линии
   StartLine := TLine.Create(Form1);
   StartLine.Parent := Form1;
- // StartLine.Left := sb1VarDef.Left;
- // StartLine.Top := sb1VarDef.Top + LnW;
-
-  // Задание списка
   Component_List_head := StartLine;
   Component_List_tail := StartLine;
-
- //Выравнивание элементов
-  edtVarDef.Width := Canvas.TextWidth(edtVarDef.text);
-  sb1VarDef.Left := edtVarDef.left - 5 - sb1VarDef.Width;
-  sb2VarDef.Left := edtVarDef.left + edtVarDef.Width + 5;
-  eq.Left := sb2VarDef.Left + sb2VarDef.Width + 5;
 
   if ParamCount > 0 then
   begin
@@ -198,10 +188,12 @@ begin
     AssignF(FilePath);
     ReadFromFile();
   end;
-  isModified := False;
 
+  isModified := False;
   ObjectsAlign(false);
 
+  enabled := False;
+  SystemParametersInfo(SPI_SETBEEP, 0, nil, SPIF_SENDWININICHANGE);
 end;
 
 procedure TForm1.ResetStatement();
@@ -211,23 +203,6 @@ begin
   RedrawAll();
 end;
 
-procedure TForm1.DrawRightBorder();
-const
-  Shft = 10;
-  dstnc = 2;
-var
-  Y: integer;
-begin
-  Y := 0;
-  while Y <= Height do
-  begin
-    Canvas.MoveTo(RightBorder, Y);
-    Canvas.LineTo(RightBorder, Y + Shft);
-    Y := Y + Shft + dstnc;
-  end;
-end;
-
-
 //Перерисовка всех канвасов
 procedure TForm1.RedrawAll();
 var
@@ -235,14 +210,16 @@ var
   obj: TLine;
 begin
    //Перерисовка линий
-  DrawRightBorder();
+  eq.Repaint;
+  sb1VarDef.Repaint;
+  sb2VarDef.Repaint;
   for i := 0 to ComponentCount - 1 do
   begin
     if (Components[i] is TLine) then
     begin
       obj := (Form1.Components[i] as TLine);
       if (obj.hasArrow) then
-        obj.LineDraw;
+        obj.Draw;
     end
     else if (Components[i] is TVariable) then
     begin
@@ -258,88 +235,53 @@ begin
     TrLines[i].Draw();
 end;
 
-{**************************************************************}
-{                                                              }
-{                   Расширение компонента                      }
-{                                                              }
-{**************************************************************}
+procedure AlignVariableDefinition();
+begin
+  with Form1 do
+  begin
+    sb1VarDef.Left := Panel1.Left + Panel1.Width + LeftBorder;
+    edtVarDef.Left := sb1VarDef.Left + sb1VarDef.Width + SBDistance;
+    sb2VarDef.Left := edtVarDef.left + edtVarDef.Width + SBDistance + 1;
+    eq.Left := sb2VarDef.left + sb2VarDef.Width + ElemDistance;
+  end;
+end;
 
 procedure TForm1.ObjectsAlign(AlignAlter: Boolean);
 var
   i: Integer;
   obj: TComponent;
-  vrbl: TVariable;
-  ln: TLine;
-  cnst: TConstant;
 begin
-  sb2VarDef.Left := edtVarDef.left + edtVarDef.Width + 5;
-  eq.Left := sb2VarDef.left + sb2VarDef.Width + 5;
-
+  AlignVariableDefinition();
   obj := Component_List_head;
   (obj as TLine).Left := sb1VarDef.Left;
-  (obj as TLine).Top := sb1VarDef.Top + LnW;
+  (obj as TLine).Top := sb1VarDef.Top + VarDefStrtLnDistance;
   while obj <> nil do
   begin
     if (obj is TVariable) then
     begin
-      vrbl := (obj as TVariable);
-      vrbl.sqrBra[1].Left := ((obj as TVariable).Prev as TSyntUnit).Left + ((obj as TVariable).Prev as TSyntUnit).Width + 5;
-      vrbl.Left := (obj as TVariable).sqrBra[1].Left + (obj as TVariable).sqrBra[1].Width + 4;
-      vrbl.Top := (vrbl.prev as TLine).Top + (vrbl.prev as TLine).Height div 2 - vrbl.Height div 2 + 3;
-      vrbl.sqrBra[2].Left := (obj as TVariable).Left + (obj as TVariable).Width + 4;
-      vrbl.Align();
-      obj := vrbl.Next;
+     (obj as TVariable).align();
+      obj := (obj as TVariable).Next;
     end
     else if (obj is TConstant) then
     begin
-      cnst := (obj as TConstant);
-      cnst.Top := (cnst.prev as TLine).Top + (cnst.prev as TLine).Height div 2 - cnst.Height div 2 + 3;
-      cnst.Left := (cnst.prev as TLine).Left + (cnst.prev as TLine).Width + 5;
-      obj := cnst.Next;
+     (obj as TConstant).align();
+      obj := (obj as TConstant).Next;
     end
     else if (obj is TLine) then
     begin
-      ln := obj as TLine;
-      ln.Width := LnW - MinW + ln.MinWidth;
-      if ln.Prev is TSyntSymbol then
-      begin
-        ln.Top := (ln.prev as TSyntSymbol).Top + (ln.prev as TSyntSymbol).Height div 2 - ln.Height div 2 - 3;
-        if ln.Prev is TVariable then
-          ln.Left := (ln.Prev as TVariable).sqrBra[2].Left + (ln.Prev as TVariable).sqrBra[2].Width + 5
-        else if ln.Prev is TConstant then
-          ln.Left := (ln.Prev as TConstant).Left + (ln.Prev as TConstant).Width + 5;
-      end
-      else if ln.Prev is TSyntUnit then
-      begin
-        ln.Top := (ln.prev as TSyntUnit).Top;
-        ln.Left := (ln.Prev as TSyntUnit).Left + (ln.Prev as TSyntUnit).Width;
-      end
-      else if ln.Prev is TTransferLine then
-      begin
-        ln.Top := (ln.prev as TTransferLine).TrLnElems[3].Top + (ln.prev as TTransferLine).TrLnElems[3].Height - ln.Height;
-        ln.Left := (ln.Prev as TTransferLine).TrLnElems[3].Left + (ln.Prev as TTransferLine).TrLnElems[3].Width;
-      end;
-      obj := ln.Next;
+      (obj as TLine).align();
+      obj := (obj as TLine).Next;
     end
     else if (obj is TTransferLine) then
     begin
       (obj as TTransferLine).Align();
       obj := (obj as TTransferLine).Next;
     end;
-
-    if obj is TLine then
-      CheckRigthBorderIntr(obj as TLine);
   end;
   if AlignAlter then
     for i := 0 to Length(Alter) - 1 do
       AlterAlign(i, false, true);
   RedrawAll();
-end;
-
-procedure TForm1.CheckRigthBorderIntr(Obj: TLine);
-begin
-  if ((Obj.Left + Obj.Width) >= RightBorder) and (not (Obj.Next is TTransferLine)) then
-    MessageDlg(rightBorderMessage, mtInformation, [mbOK], 0)
 end;
 
 procedure TForm1.TransferLineCreate(Sender: TPoint);
@@ -366,6 +308,54 @@ begin
   ObjectsAlign(false);
 end;
 
+procedure TForm1.ListEdit(Sender: TPoint; SyntSymbol: TSyntSymbol);
+var
+  ln: TLine;
+  buf_Component: TComponent;
+begin
+  if ((Sender.Owner as TLine).Prev is TLine) and ((Sender.Owner as TLine).Next is TLine) then
+  begin
+    SyntSymbol.Next := (Sender.Owner as TLine).Next as TLine;
+    (SyntSymbol.Next as TLine).Prev := SyntSymbol;
+    SyntSymbol.Prev := (Sender.Owner as TLine).Prev as TLine;
+    (SyntSymbol.Prev as TLine).Next := SyntSymbol;
+    (Sender.Owner as TLine).Destroy();
+  end
+  else
+  begin
+    ln := Sender.Owner as TLine;
+    LineCreate(Sender);
+    //Перепривзяка при сдвиге
+    if Sender.Name <> 'MainPoint' then
+      ReConnection(Sender);
+    //Редактирование списка
+    buf_Component := ln.Next;
+    ln.Next := SyntSymbol;
+    SyntSymbol.Prev := ln;
+    SyntSymbol.Next := Line;
+    Line.Next := buf_Component;
+    Line.Prev := SyntSymbol;
+    if (buf_Component is TSyntSymbol) then
+      (buf_Component as TSyntSymbol).Prev := Line
+    else if (buf_Component is TSyntUnit) then
+    begin
+      (buf_Component as TSyntUnit).Prev := Line;
+      if (buf_Component is TAlternative) then
+        (buf_Component as TAlternative).PPrevS[ln.subdepth - 1] := Line
+    end
+    else if (buf_Component is TTransferLine) then
+      (buf_Component as TTransferLine).Prev := Line
+    else if (buf_Component = nil) then
+      Component_List_Tail := Line;
+
+    if (Line.Prev is TSyntSymbol) then
+      Line.arrowReversed := ((Line.Prev as TSyntSymbol).Prev as TLine).arrowReversed;
+  end;
+  SyntSymbol.OnChange := OnTextChange;
+  ObjectsAlign(true);
+  ObjectsAlign(true);
+end;
+
 procedure TForm1.ConstantCreate(Sender: TPoint);
 var
   ln: TLine;
@@ -374,63 +364,22 @@ begin
   isModified := true;
   SaveProgramState();
   Constant.StartSettings();
-  Line := TLine.Create(Form1);
-
-  //Редактирование списка
-  ln := Sender.Owner as TLine;
-  buf_Component := ln.Next;
-  ln.Next := Constant;
-  Constant.Prev := ln;
-  Constant.Next := Line;
-  Line.Next := buf_Component;
-  Line.Prev := Constant;
-  if (buf_Component is TSyntSymbol) then
-    (buf_Component as TSyntSymbol).Prev := Line
-  else if (buf_Component is TTransferLine) then
-    (buf_Component as TTransferLine).Prev := Line
-  else if buf_Component = nil then
-    Component_List_tail := Line;
-  Constant.OnChange := OnTextChange;
-  ObjectsAlign(true);
+  ListEdit(Sender, Constant);
 end;
 
-procedure TForm1.ConstantAlternativeCreate(Sender: TPoint);
+procedure TForm1.VariableCreate(Sender: TPoint);
 var
-  Alt: TAlternative;
-  PBuf: TComponent;
+  buf_Component: TComponent;
+  ln: TLine;
 begin
   isModified := true;
   SaveProgramState();
-  //Создание переменной
-  Constant.StartSettings();
-  Alt := Sender.Owner as TAlternative;
-
-  //Создание линии
-  Line := TLine.Create(Form1);
-
-  //Редактирование списка
-  PBuf := Alt.Next;
-  Alt.Next := Constant;
-  Constant.Prev := Alt;
-  Constant.Next := Line;
-  Line.Prev := Constant;
-  Line.Next := PBuf;
-  if PBuf is TSyntSymbol then
-    (PBuf as TSyntSymbol).Prev := Line
-  else if PBuf is TSyntUnit then
-  begin
-    if PBuf is TLine then
-      (PBuf as TLine).Prev := Line
-    else
-      (PBuf as TAlternative).PPrevS[Alt.SubDepth - 1] := Line;
-  end;
-
-  ObjectsAlign(true);
+  Variable := TVariable.Create(Form1);
+  ListEdit(Sender, Variable);
 end;
 
 procedure TForm1.OnTextChange(Sender: TObject);
 begin
-//  SaveProgramState();
   isModified := true;
   if Length((Sender as TEdit).text) = 0 then
     (Sender as TEdit).text := (Sender as TEdit).text + ' ';
@@ -476,58 +425,6 @@ begin
   SetLength(Ln.Points, Length(((Sender as TPoint).Owner as TLine).Points) - j);
 end;
 
-procedure TForm1.VariableCreate(Sender: TPoint);
-var
-  buf_Component: TComponent;
-  ln: TLine;
-begin
-  isModified := true;
-  SaveProgramState();
-  Variable := TVariable.Create(Form1);
-  if ((Sender.Owner as TLine).Prev is TLine) and ((Sender.Owner as TLine).Next is TLine) then
-  begin
-    Variable.Next := (Sender.Owner as TLine).Next as TSyntUnit;
-    (Variable.Next as TLine).Prev := Variable;
-    Variable.Prev := (Sender.Owner as TLine).Prev as TSyntUnit;
-    (Variable.Prev as TLine).Next := Variable;
-    (Sender.Owner as TLine).Destroy();
-  end
-  else
-  begin
-    ln := Sender.Owner as TLine;
-    LineCreate(Sender);
-    //Перепривзяка при сдвиге
-    if Sender.Name <> 'MainPoint' then
-      ReConnection(Sender);
-    //Редактирование списка
-    buf_Component := ln.Next;
-    ln.Next := Variable;
-    Variable.Prev := ln;
-    Variable.Next := Line;
-    Line.Next := buf_Component;
-    Line.Prev := Variable;
-    if (buf_Component is TSyntSymbol) then
-      (buf_Component as TSyntSymbol).Prev := Line
-    else if (buf_Component is TSyntUnit) then
-    begin
-      (buf_Component as TSyntUnit).Prev := Line;
-      if (buf_Component is TAlternative) then
-        (buf_Component as TAlternative).PPrevS[ln.subdepth - 1] := Line
-    end
-    else if (buf_Component is TTransferLine) then
-      (buf_Component as TTransferLine).Prev := Line
-    else if (buf_Component = nil) then
-      Component_List_Tail := Line;
-
-    if (Line.Prev is TSyntSymbol) then
-      Line.arrowReversed := ((Line.Prev as TSyntSymbol).Prev as TLine).arrowReversed;
-
-  end;
-  Variable.OnChange := OnTextChange;
-  ObjectsAlign(true);
-  ObjectsAlign(true);
-end;
-
 procedure TForm1.MainPointMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   hideP: Boolean;
@@ -542,9 +439,11 @@ begin
         VariableCreate(Point);
       2:
         ConstantCreate(Point);
+      8:
+        TransferLineCreate(Point);
     end;
   end
-  else if not (Sender as TPoint).isAlter then
+  else
   begin
     Point := (Sender as TPoint);
     case currentObject of
@@ -559,16 +458,10 @@ begin
         end;
       4:
         AlterCreate2(Point);
-      8:
-        TransferLineCreate(Point);
-    end
-  end
-  else if (Sender as TPoint).isAlter then
-  begin
-    Point := (Sender as TPoint);
-    case currentObject of
       5:
         AlterAddLineCreate(Point);
+      8:
+        TransferLineCreate(Point);
     end;
   end;
   if hideP then
@@ -605,13 +498,22 @@ begin
   MainPoint.Owner := Component_List_tail;
 end;
 
-procedure TForm1.ShowPointsOnLines;
+procedure TForm1.ShowPointsOnLines();
 var
   i: integer;
 begin
-  for i := 0 to ComponentCount - 1 do
-    if Components[i] is TLine then
-      (Components[i] as TLine).ShowPoints();
+  if (currentObject <> 3) and (currentObject <> 4) then
+  begin
+    ShowMainPoint();
+    for i := 0 to ComponentCount - 1 do
+      if Components[i] is TLine then
+        (Components[i] as TLine).ShowPointsL();
+  end
+  else
+    for i := 0 to ComponentCount - 1 do
+      if Components[i] is TLine then
+        (Components[i] as TLine).ShowPoints();
+
 end;
 
 procedure TForm1.ShowPoints();
@@ -621,30 +523,15 @@ var
   Alternative: TAlternative;
 begin
   RedrawAll();
-  ShowMainPoint();
-  for i := 0 to ComponentCount - 1 do
-  begin
-    if (Form1.Components[i] is TLine) then
-    begin
-      Ln := (Form1.Components[i] as TLine);
-      if (Length(Ln.Points) > 0) and (Ln.Next <> nil) then
-        Ln.ShowPoints()
-      else if (Length(Ln.Points) > 0) and (Ln.Next = nil) then
-        Ln.ShowPointsL();
-    end
-    else if (Form1.Components[i] is TAlternative) then
-    begin
-      Alternative := (Form1.Components[i] as TAlternative);
-      Alternative.ShowPoints();
-    end
-  end;
+  for i := 0 to length(Alter) - 1 do
+    Alter[i, 2].ShowPoints();
 end;
 
 procedure TForm1.VarTestCreateClick(Sender: TObject);
 begin
   if currentObject <> 1 then
   begin
-    ShowPoints();
+    ShowPointsOnLines();
     currentObject := 1;
   end
   else
@@ -711,10 +598,6 @@ begin
   SaveProgramState();
   //Первоначальное создание и настройка
   AlterStartSettings(ind);
-  Alter[ind, 2].isUpper := isUpperChoice;
-  Alter[ind, 1].isUpper := isUpperChoice;
-  Alter[ind, 2].isLoop := isLoop;
-  Alter[ind, 1].isLoop := isLoop;
 
   //Привязка левого пилона и носителя
   obj := (Sender.Owner as TLine);
@@ -748,14 +631,11 @@ procedure TForm1.AlterEmptyCreate(Sender: TPoint);
 var
   buf_comp: TComponent;
 begin
-  SaveProgramState();
   LineCreate(Sender);
   buf_comp := (Sender.Owner as TLine).Next;
   (Sender.Owner as TLine).Next := Line;
   Line.Prev := (Sender.Owner as TLine);
-
   LineCreate(Sender);
-
   ((Sender.Owner as TLine).Next as TLine).Next := Line;
   Line.Prev := ((Sender.Owner as TLine).Next as TLine);
   Line.Next := buf_comp;
@@ -779,8 +659,8 @@ procedure TForm1.AltCreateClick(Sender: TObject);
 begin
   if currentObject = 0 then
   begin
-    ShowPointsOnLines();
     currentObject := 3;
+    ShowPointsOnLines();
     isUpperChoice := False;
     isLoop := False;
   end
@@ -809,8 +689,8 @@ procedure TForm1.AltCreatUpperClick(Sender: TObject);
 begin
   if currentObject = 0 then
   begin
-    ShowPointsOnLines();
     currentObject := 3;
+    ShowPointsOnLines();
     isUpperChoice := True;
     isLoop := False;
   end
@@ -827,8 +707,8 @@ procedure TForm1.TransferLineClick(Sender: TObject);
 begin
   if currentObject = 0 then
   begin
-    ShowPointsOnLines();
     currentObject := 8;
+    ShowPointsOnLines();
   end
   else
     ResetStatement();
@@ -838,8 +718,8 @@ procedure TForm1.btn5Click(Sender: TObject);
 begin
   if currentObject = 0 then
   begin
-    ShowPoints();
     currentObject := 2;
+    ShowPointsOnLines();
   end
   else
     ResetStatement();
@@ -849,8 +729,8 @@ procedure TForm1.LoopClick(Sender: TObject);
 begin
   if currentObject = 0 then
   begin
-    ShowPointsOnLines();
     currentObject := 3;
+    ShowPointsOnLines();
     isUpperChoice := False;
     isLoop := True;
   end
@@ -862,8 +742,8 @@ procedure TForm1.UpperLoopClick(Sender: TObject);
 begin
   if currentObject = 0 then
   begin
-    ShowPointsOnLines();
     currentObject := 3;
+    ShowPointsOnLines();
     isUpperChoice := True;
     isLoop := True;
   end
@@ -897,7 +777,7 @@ begin
 end;
 
 //Run only with administrator rights!!
-procedure ExtensionRegister();
+{procedure ExtensionRegister();
 var
   reg: Tregistry;
 begin
@@ -919,11 +799,17 @@ begin
     CloseKey;
     Free;
   end;
-end;
+end; }
 
 procedure TForm1.Save1Click(Sender: TObject);
 begin
-  WriteinFile();
+  if FilePath <> '' then
+  begin
+    WriteinFile();
+    isModified := false;
+  end
+  else
+    Saveas1Click(Sender);
 end;
 
 procedure TForm1.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
@@ -943,19 +829,115 @@ end;
 
 procedure TForm1.Saveas1Click(Sender: TObject);
 begin
+  dlgSave.Filter := '*.SDE|*.SDE';
   if dlgSave.Execute then
   begin
+    filepath := dlgSave.FileName;
+
     FilePath := dlgSave.FileName;
+    if ansipos('.', filepath) = 0 then
+      FilePath := FilePath + '.sde';
     AssignF(FilePath);
     WriteInFile();
+    isModified := false;
   end;
 end;
 
-procedure TForm1.Newpage1Click(Sender: TObject);
+procedure TForm1.clearClick(Sender: TObject);
 begin
- // Page := TTabSheet.Create(Form1);
- // Page.PageControl := PageControl;
- // Page.Caption := 'Page_'+IntToStr(PageControl.PageCount);
+  SaveProgramState();
+  DeleteAllObjects();
+  StartLine := TLine.Create(Form1);
+  StartLine.Parent := Form1;
+  Component_List_head := StartLine;
+  Component_List_tail := StartLine;
+  edtVarDef.text := 'переменная';
+  ObjectsAlign(false);
+end;
+
+procedure TForm1.BMP1Click(Sender: TObject);
+var
+  filepath: string;
+begin
+  dlgSave.Filter := '*.BMP|*.BMP';
+  if dlgSave.Execute then
+  begin
+    filepath := dlgSave.FileName;
+    if ansipos('.', filepath) <> 0 then
+      ExportBMP(filepath)
+    else
+    begin
+      ExportBMP(filepath + '.bmp');
+    end;
+  end;
+end;
+
+procedure TForm1.JPEG1Click(Sender: TObject);
+var
+  filepath: string;
+begin
+  dlgSave.Filter := '*.JPG|*.jpg';
+  if dlgSave.Execute then
+  begin
+    filepath := dlgSave.FileName;
+    if ansipos('.', filepath) <> 0 then
+      ExportJPEG(filepath)
+    else
+    begin
+      ExportJPEG(filepath + '.jpg');
+    end;
+  end;
+end;
+
+procedure TForm1.SVG1Click(Sender: TObject);
+var
+  filepath: string;
+begin
+  dlgSave.Filter := '*.XML|*.SVG';
+  if dlgSave.Execute then
+  begin
+    filepath := dlgSave.FileName;
+    if ansipos('.', filepath) <> 0 then
+      ExportSVG(filepath)
+    else
+    begin
+      ExportSVG(filepath + '.svg');
+    end;
+  end;
+end;
+
+procedure TForm1.XML1Click(Sender: TObject);
+var
+  filepath: string;
+begin
+  dlgSave.Filter := '*.XML|*.XML';
+  if dlgSave.Execute then
+  begin
+    filepath := dlgSave.FileName;
+    if ansipos('.', filepath) <> 0 then
+      ExportSVG(filepath)
+    else
+    begin
+      ExportSVG(filepath + '.xml');
+    end;
+  end;
+end;
+
+procedure TForm1.HTML1Click(Sender: TObject);
+var
+  filepath: string;
+begin
+  dlgSave.Filter := '*.HTML|*.HTML';
+  if dlgSave.Execute then
+  begin
+    filepath := dlgSave.FileName;
+    if ansipos('.', filepath) <> 0 then
+      ExportSVG(filepath)
+    else
+    begin
+      ExportSVG(filepath + '.html');
+    end;
+  end;
 end;
 
 end.

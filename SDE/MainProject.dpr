@@ -13,12 +13,16 @@ uses
   Point in 'Units\Point.pas',
   Constant in 'Units\Constant.pas',
   States in 'Units\States.pas',
-  FileControl in 'Units\FileControl.pas';
+  FileControl in 'Units\FileControl.pas',
+  ExportUnit in 'Units\ExportUnit.pas',
+  MainMenu in 'Units\MainMenu.pas' {Form2};
 
 {$R *.res}
 
 begin
   Application.Initialize;
   Application.CreateForm(TForm1, Form1);
+  Application.CreateForm(TForm2, Form2);
+  Form2.Show();
   Application.Run;
 end.

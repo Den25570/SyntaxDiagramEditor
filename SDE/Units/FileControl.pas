@@ -64,6 +64,7 @@ type
     Alternatives: array[0..49] of TAlternativeProperties;
     SyntSymbols: array[0..49] of TSyntSymbolProperties;
     TrLines: array[0..49] of TTrLinesProperties;
+    varDefName : string[100];
   end;
 
   TSDEFile = file of TFileState;
@@ -111,6 +112,7 @@ procedure TransformStateRecordToFileRecord(var FState: TFileState; const State: 
 var
   i, j: integer;
 begin
+  FState.varDefName := State.varDefName;
   FState.LinesNum := Length(State.Lines);
   FState.AlternativesNum := Length(State.alternatives);
   FState.SyntSymbolsNum := Length(State.SyntSymbols);
@@ -170,6 +172,7 @@ procedure TransformFileRecordToStateRecord(const FState: TFileState; var State: 
 var
   i, j: integer;
 begin
+  State.varDefName := FState.varDefName;
   SetLength(State.Lines, FState.LinesNum);
   for i := 0 to FState.LinesNum - 1 do
   begin

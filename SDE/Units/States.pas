@@ -61,6 +61,7 @@ type
     SyntSymbols: array of TSyntSymbolProperties;
     TrLines: array of TTrLinesProperties;
     Next: TStatePointer;
+    varDefName : string;
   end;
 
 var
@@ -130,6 +131,7 @@ begin
   SetLength(SyntSymbols, 0);
   SetLength(TrLines, 0);
   SetLength(Syntunits, 0);
+  SetLength(Alter , 0);
 end;
 
 procedure restoreLines(State: TStatePointer);
@@ -263,8 +265,8 @@ begin
   end;
   for i := 0 to Length(State^.SyntSymbols) - 1 do
   begin
-    SyntSymbols[i].Next := FindObjectWithAddress(State, State^.SyntSymbols[i].Next) as TSyntUnit;
-    SyntSymbols[i].prev := FindObjectWithAddress(State, State^.SyntSymbols[i].prev) as TSyntUnit;
+    SyntSymbols[i].Next := FindObjectWithAddress(State, State^.SyntSymbols[i].Next) as TLine;
+    SyntSymbols[i].prev := FindObjectWithAddress(State, State^.SyntSymbols[i].prev) as TLine;
     SyntSymbols[i].OnChange := Form1.OnTextChange;
   end;
   for i := 0 to Length(TrLines) - 1 do
@@ -296,7 +298,9 @@ begin
     SetLength(TrLines, 0);
     SetLength(Syntunits, 0);
 
+    Form1.edtVarDef.text := State.varDefName;
     DeleteState();
+
     Form1.objectsAlign(true);
     Form1.objectsAlign(true);
   end;
@@ -327,18 +331,13 @@ var
 begin
   NewState();
   PState := Pstates_head;
-
+  PState^.varDefName := Form1.edtvardef.text;
   for i := 0 to Form1.ComponentCount - 1 do
   begin
     if Form1.Components[i] is TLine then
     begin
       SetLength(PState^.Lines, Length(PState^.Lines) + 1);
       PState^.Lines[Length(PState^.Lines) - 1] := TransformLine(Form1.Components[i] as TLine);
-    end
-    else if Form1.Components[i] is TAlternative then
-    begin
-      SetLength(PState^.Alternatives, Length(PState^.Alternatives) + 1);
-      PState^.Alternatives[Length(PState^.Alternatives) - 1] := TransformAlter(Form1.Components[i] as TAlternative);
     end
     else if Form1.Components[i] is TSyntSymbol then
     begin
@@ -350,6 +349,12 @@ begin
       SetLength(PState^.TrLines, Length(PState^.TrLines) + 1);
       PState^.TrLines[Length(PState^.TrLines) - 1] := TransformTrLine(Form1.Components[i] as TTransferLine);
     end
+  end;
+  SetLength(PState^.Alternatives, Length(Alter)*2);
+  for i := 0 to length(alter)-1 do
+  BEGIN
+   PState^.Alternatives[i*2] := TransformAlter(Alter[i,1]);
+   PState^.Alternatives[i*2+1] := TransformAlter(Alter[i,2]);
   end;
 end;
 

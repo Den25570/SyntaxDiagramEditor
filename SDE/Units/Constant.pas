@@ -9,6 +9,7 @@ type
   TConstant = class(TSyntSymbol)
   public
     procedure StartSettings();
+    procedure align();
   end;
 
 implementation
@@ -23,6 +24,12 @@ begin
   Form1.Constant.BorderStyle := bsNone;
   Form1.Constant.Text := 'константа';
   Form1.Constant.Width := Form1.Canvas.TextWidth(Form1.Constant.Text);
+end;
+
+procedure TConstant.align();
+begin
+  self.Top := self.prev.Top + self.prev.Height div 2 - self.Height div 2 + 3;
+  self.Left := self.prev.Left + self.prev.Width + 5;
 end;
 
 end.

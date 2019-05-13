@@ -11,12 +11,12 @@ type
     sqrBra: array[1..2] of TStaticText;
     constructor Create(AOwner : TComponent);
     destructor Destroy();
-    procedure Align();
+    procedure align();
   end;
 
 implementation
 
-uses main;
+uses main, Line;
 
 constructor TVariable.Create(AOwner : TComponent);
 begin
@@ -47,10 +47,12 @@ end;
 
 procedure TVariable.ALign;
 begin
-  sqrBra[1].Left := left - 5 - sqrBra[1].Width;
-  sqrBra[1].Top := Top - 4;
-  sqrBra[2].Left := left + Width + 5;
-  sqrBra[2].Top := Top - 4;
+  sqrBra[1].Left := prev.left + prev.width + ElemDistance;
+  sqrBra[1].Top := prev.Top + prev.height div 2 - sqrBra[1].height div 2 + 1;
+  Self.Left := sqrBra[1].Left + sqrBra[1].width + SBDistance;
+  Self.Top := sqrBra[1].Top + sqrBra[1].height div 2 - Self.height div 2 + 1;
+  sqrBra[2].Left := Self.left + Self.Width + SBDistance + 2;
+  sqrBra[2].Top := Self.Top + Self.height div 2 - sqrBra[2].height div 2 - 1;
 end;
 
 

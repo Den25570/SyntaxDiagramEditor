@@ -34,6 +34,7 @@ begin
    Pen.Color := clGreen;
    visible := False;
    OnMouseDown := Form1.MainPointMouseDown;
+
 end;
 
 end.

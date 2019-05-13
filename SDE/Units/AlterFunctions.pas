@@ -53,10 +53,16 @@ begin
   Line.arrowReversed := Form1.IsLoop;
   Line.Next := Alter[ind, 1];
   Line.Prev := Alter[ind, 2];
+  Line.Points[0].subDepth := 1;
 
   //Настройка списка
   Alter[ind, 2].PNextS[0] := Line;
   Alter[ind, 1].PPrevS[0] := Line;
+
+  Alter[ind, 2].isUpper := Form1.isUpperChoice;
+  Alter[ind, 1].isUpper := Form1.isUpperChoice;
+  Alter[ind, 2].isLoop := Form1.isLoop;
+  Alter[ind, 1].isLoop := Form1.isLoop;
 end;
 
 procedure LeftPylonSet(const ind: integer);
@@ -67,6 +73,7 @@ begin
   Alter[ind, 2].subDepth := 1;
   Alter[ind, 2].Altindex := ind;
   SetLength(Alter[ind, 2].PNextS, 1);
+  Setlength(Alter[ind, 2].PPrevS, 0);
 
   StartPoint(Alter[ind, 2]);
   StartPoint(Alter[ind, 2]);
@@ -80,7 +87,8 @@ begin
   Alter[ind, 1].PylonShift := 0;
   Alter[ind, 1].subDepth := 1;
   Alter[ind, 1].Altindex := ind;
-  SetLength(Alter[ind, 1].PPrevS, 1);
+  SetLength(Alter[ind, 1].PNextS, 0);
+  Setlength(Alter[ind, 1].PPrevS, 1);
 end;
 
 procedure StartPoint(const Sender: TAlternative);
@@ -125,7 +133,7 @@ begin
       if obj is TVariable then
       begin
         Edt := (obj as TVariable);
-        TotalLength := TotalLength + (Edt.SqrBra[2].Left + Edt.SqrBra[2].Width) - Edt.SqrBra[1].Left + 10;
+        TotalLength := TotalLength + Edt.SqrBra[2].Width*2 + Edt.Width + 20;
       end
       else if obj is TConstant then
       begin
@@ -145,13 +153,16 @@ function getLines(const ind, subdepth: integer): TLines;
 var
   obj: TLine;
 begin
-  obj := Alter[ind, 2].PNextS[subdepth - 1];
+  obj := Alter[ind, 2].PNextS[subdepth];
   Setlength(Result, 1);
   Result[0] := obj;
   while not (obj.Next is TAlternative) do
   begin
      //Bug alternative empty
-    obj := (obj.next as TSyntSymbol).next as TLine;
+    if obj.next is TSyntSymbol then
+    obj := (obj.next as TSyntSymbol).next as TLine
+    else
+    obj := (obj.next as TLine).Next as TLine;
     Setlength(Result, Length(Result) + 1);
     Result[Length(Result) - 1] := obj;
   end;
@@ -178,7 +189,6 @@ begin
     Alter[ind, 1].Top := Alter[ind, 1].Top - Alter[ind, 1].Height - ALTER[ind, 1].Canvas.pen.width;
     Alter[ind, 2].Top := Alter[ind, 2].Top - Alter[ind, 2].Height - ALTER[ind, 2].Canvas.pen.width;
   end;
-
 end;
 
 procedure AlignNestingAlternative(ind : integer);
@@ -206,7 +216,7 @@ begin
   begin
     CalcRealWidth(ind, i, TotalLength);
     currentLength := (Alter[ind, 1].Left - (Alter[ind, 2].Left + Alter[ind, 2].Width));
-    Lines := getLines(ind, Alter[ind, 2].subDepth);
+    Lines := getLines(ind,i);
     if TotalLength > currentLength then
       begin
         for j := 0 to Length(Lines) - 1 do
@@ -216,8 +226,10 @@ begin
         AlignNestingAlternative(ind);
       end
     else if TotalLength < currentLength then
+    begin
       for j := 0 to Length(Lines) - 1 do
         Lines[j].Width := Lines[j].MinWidth + Abs(TotalLength - currentLength) div Length(Lines);
+    end;
     Form1.ObjectsAlign(false);
     AlternativePylonsAlign(ind);
   end;
@@ -306,7 +318,6 @@ var
   obj: TComponent;
 begin
   ind := Sender.AltIndex;
-
   Alter[ind, 1].height := Alter[ind, 1].height + ShiftHeight;
   Alter[ind, 2].height := Alter[ind, 1].height;
 

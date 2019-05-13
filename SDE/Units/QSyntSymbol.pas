@@ -3,14 +3,14 @@ unit QSyntSymbol;
 interface
 
 uses
-  SysUtils, Classes,QDialogs, QFileCtrls, StdCtrls, SyntUnit;
+  SysUtils, Classes,QDialogs, QFileCtrls, StdCtrls, SyntUnit, Line;
 
 type
   TSyntSymbol = class(TEdit)
   public
     //List connections
-    Prev : TSyntUnit;
-    Next : TSyntUnit;
+    Prev : TLine;
+    Next : TLine;
     addres : Integer;
   end;
 

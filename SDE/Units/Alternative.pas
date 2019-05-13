@@ -72,22 +72,22 @@ begin
     Canvas.MoveTo(Canvas.Pen.Width, 0);
     Canvas.LineTo(Width,Width-Canvas.Pen.Width);
     Canvas.Rectangle(Width-(Canvas.Pen.Width-1),Width - Canvas.Pen.Width,Width,height-Width+Canvas.Pen.Width);
-    for i := 1 to subDepth - 1 do
+   { for i := 1 to subDepth - 1 do
     begin
       T := ((PNextS[i - 1] as TLine).Top + (PNextS[i - 1] as TLine).Height div 2) - Top;
       Canvas.MoveTo(Width, T);
       Canvas.LineTo(Width div 2, T - Width div 2);
-    end;
+    end;   }
   end
   else if isUpper then
   begin
 
-    for i := 1 to subDepth - 1 do
+   { for i := 1 to subDepth - 1 do
     begin
       T := ((PNextS[i - 1] as TLine).Top + (PNextS[i - 1] as TLine).Height div 2) - Top;
       Canvas.MoveTo(Width, T);
       Canvas.LineTo(Width div 2, T + Width div 2);
-    end;
+    end; }
   end;
 end;
 
@@ -105,24 +105,12 @@ begin
     Canvas.MoveTo(Width - Canvas.Pen.Width, 0);
     Canvas.LineTo(0,Width - Canvas.Pen.Width);
     Canvas.Rectangle(0,Width- Canvas.Pen.Width,Canvas.Pen.Width,height-Width+Canvas.Pen.Width-1);
-    for i := 1 to subDepth - 1 do
-    begin
-      T := ((PPrevS[i - 1] as TLine).Top + (PPrevS[i - 1] as TLine).Height div 2) - Top;
-      Canvas.MoveTo(0, T);
-      Canvas.LineTo(Width div 2, T - Width div 2);
-    end;
   end
   else if isUpper then
   begin
     Canvas.Rectangle(Width div 2, height + 1, Width div 2 + Canvas.Pen.Width - 1, Width);
     Canvas.MoveTo(Width div 2, Width);
     Canvas.LineTo(0, Width div 2);
-    for i := 1 to subDepth - 1 do
-    begin
-      T := ((PPrevS[i - 1] as TLine).Top + (PPrevS[i - 1] as TLine).Height div 2) - Top;
-      Canvas.MoveTo(0, T);
-      Canvas.LineTo(Width div 2, T + Width div 2);
-    end;
   end
 end;
 
